@@ -4,7 +4,7 @@
   "description": "A GUI tool for flashing the Espruino JavaScript runtime on Adafruit Huzzah (ESP8366 based) boards",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron index.js"
   },
   "repository": {
     "type": "git",
@@ -25,5 +25,8 @@
   "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
   "dependencies": {
     "serialport": "^2.0.6"
+  },
+  "devDependencies": {
+    "electron-prebuilt": "^0.36.9"
   }
 }
