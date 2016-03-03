@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/thingsSDK/especially-flasher/issues"
   },
-  "homepage": "https://github.com/thingsSDK/especially-flasher#readme"
+  "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
+  "dependencies": {
+    "serialport": "^2.0.6"
+  }
 }
