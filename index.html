@@ -6,11 +6,16 @@
   <body>
     <h1>Hello World!</h1>
     <script>
-    var getAvailablePorts = require("./spike/available_serial_ports");
-
-    getAvailablePorts().then((ports) => {
-        ports.forEach(p=>{document.write(p)});
-    }).catch(e=>{alert(e)});
+        var getAvailablePorts = require("./spike/available_serial_ports");
+        getAvailablePorts().then((ports) => {
+            var select = document.createElement("select");
+            ports.forEach(p => {
+                var option = document.createElement("option");
+                option.innerText = p;
+                select.appendChild(option);
+            });
+            document.body.appendChild(select);
+        }).catch(e=>{alert(e)});
     </script>
   </body>
 </html>
