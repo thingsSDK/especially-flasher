@@ -24,9 +24,11 @@
   },
   "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
   "dependencies": {
+    "node-binary": "^1.1.0",
     "serialport": "^2.0.6"
   },
   "devDependencies": {
-    "electron-prebuilt": "^0.36.9"
+    "electron-prebuilt": "^0.36.9",
+    "slip": "^1.0.2"
   }
 }
