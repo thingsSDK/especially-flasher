@@ -27,6 +27,8 @@ app.on('ready', function() {
     height: 200,
     'min-width': 256,
     'min-height': 200,
+    'max-width': 500,
+    'max-height': 550,
     'accept-first-mouse': true,
     'title-bar-style': 'hidden'
   });

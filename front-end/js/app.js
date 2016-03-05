@@ -5,7 +5,7 @@ function $(id) { return document.getElementById(id) }
 const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = $("ports");
-
+var last_notification = "";
 
 flashButton.addEventListener("click", event => {
     var notification = new Notification("Flash Finished!");
@@ -13,7 +13,6 @@ flashButton.addEventListener("click", event => {
 
 
 function checkPorts() {
-    appStatus.textContent = "Checking Serial/COM ports";
     availableSerialPorts()
         .then(addPortsToSelect)
         .then(readyToFlash)
@@ -68,7 +67,11 @@ function enableInputs(){
  * @param error
  */
 function onError(error){
-    new Notification(error.message);
+    if(last_notification !== error.message) {
+        last_notification = error.message;
+        new Notification(last_notification);
+    }
+    appStatus.textContent = error.message;
 }
 
 /**
