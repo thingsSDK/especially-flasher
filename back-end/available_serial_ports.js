@@ -7,4 +7,4 @@ module.exports = function getAvailablePorts(){
             resolve(ports.map(p => { return p.comName }));
         });
   });
-}
+};
