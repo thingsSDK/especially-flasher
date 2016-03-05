@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Especially Flasher</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/photon.min.css">
+</head>
+<body>
+<div class="window">
+
+    <header class="toolbar toolbar-header">
+        <h1 class="title">Especially Flasher</h1>
+    </header>
+
+    <div class="window-content">
+        <div class="padded-more">
+            <label for="ports">Select Port:</label>
+            <select title="Select a Serial/COM Port" id="ports" name="ports" class="form-control" disabled>
+
+            </select>
+        </div>
+    </div>
+
+    <footer class="toolbar toolbar-footer">
+        <div class="toolbar-actions">
+           <span id="status">
+           </span>
+            <button id="flash-button" class="btn btn-primary pull-right" disabled>
+                Flash!
+            </button>
+        </div>
+    </footer>
+</div>
+<!-- Javascript -->
+<script src="js/app.js" charset="utf-8"></script>
+</body>
+</html>
