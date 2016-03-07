@@ -28,6 +28,7 @@ const commands = {
     NO_COMMAND: 0xFF
 };
 
+const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
 
 function slipReadParser(emitter, buffer) {
         // This is the pyramid of doom right?
@@ -44,7 +45,43 @@ function EspComm(config) {
         baud: config.baud,
         parser: slipReadParser
     });
+    this.isOpen = false;
     this.config = config;
+}
+
+EspComm.prototype.open = function() {
+    if (this.isOpen) {
+        return true;
+    }
+    this.port.open(function(error) {
+        console.error("Could not open " + this.port);
+    });
+    if (this.sync()) {
+        return true;
+    }
+    return false;
+}
+
+EspComm.prototype.close = function() {
+    this.port.close();
+}
+
+EspComm.prototype.calculateChecksum = function(data) {
+    var result = 0xEF;
+    for (var i = 0; i < data.size(); i++) {
+        result ^= data[i];
+    }
+    return result;
+}
+
+
+EspComm.prototype.sync = function() {
+    self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+        .then(function(result)) {
+            // WIP  Some sort of loopedy loop.
+            // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L239
+        });
+    
 }
 
 // TODO:csd - How to make the commands pretty?
@@ -54,16 +91,12 @@ EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
     var port = this.port;
     return new Promise(function(resolve, reject) {
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, {
-            direction: 0x00,
-            command: command,
-            size: data.size(), 
-        });
+        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.size()]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
         port.once('data', function(buffer) {    
             var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
-            // FIXME:csd - Sanity check here regarding things
+            // FIXME:csd - Sanity check here regarding direction???
             resolve({
                 header: receiveHeader,
                 // Result follows the header
@@ -71,4 +104,6 @@ EspComm.prototype.sendCommand = function(command, data) {
             });
         });
     });
-}
+};
+
+
