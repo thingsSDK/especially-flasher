@@ -18,10 +18,15 @@ module.exports = class SerialScanner extends EventEmitter {
         )
     }
 
-    checkForChanges(){
+    /**
+     * Checks for changes after initial scan.
+     * Emits deviceAdded for each device added and
+     * deviceRemoved for each device removed;
+     */
+    checkForChanges() {
         serialport.list(
             (err, ports) => {
-                this._listWithCallback(err,ports, () => {
+                this._listWithCallback(err, ports, () => {
                     let newPorts = ports.map(this._portMap);
                     this.checkDeviceRemoved(newPorts);
                     this.checkDeviceAdded(newPorts);
@@ -31,22 +36,44 @@ module.exports = class SerialScanner extends EventEmitter {
         )
     }
 
+    /**
+     * Compares the previous scan's port list with the current port list.
+     * Emits deviceAdded for each new device added.
+     * @param newPorts an array of string representation of ports
+     */
     checkDeviceAdded(newPorts){
-        newPorts.forEach((newPort) => {
-            if(this.ports.indexOf(newPort) === - 1) {
-                this.emit("deviceAdded", newPort);
-            }
-        });
+        this._comparePortsWithEmittion(newPorts, this.ports, "deviceAdded");
     }
 
+    /**
+     * Compares the previous scan's port list with the current port list.
+     * Emits deviceRemoved for each device removed.
+     * @param newPorts an array of string representation of ports
+     */
     checkDeviceRemoved(newPorts) {
-        this.ports.forEach((oldPort) => {
-            if(newPorts.indexOf(oldPort) === - 1) {
-                this.emit("deviceRemoved", oldPort);
+        this._comparePortsWithEmittion(this.ports, newPorts, "deviceRemoved");
+    }
+
+    /**
+     * Helper function to compare arrays and emit events.
+     * @param arrayA
+     * @param arrayB
+     * @param event
+     * @private
+     */
+    _comparePortsWithEmittion(arrayA,arrayB, event) {
+        arrayA.forEach((port) => {
+            if(arrayB.indexOf(port) === -1) {
+                this.emit(event, port);
             }
         });
     }
 
+    /**
+     * Emits the error of err.
+     * @param err
+     * @private
+     */
     _emitError(err) {
         this.emit("error", err);
     }
@@ -56,7 +83,7 @@ module.exports = class SerialScanner extends EventEmitter {
             this._emitError(err);
         }
         else if(ports.length === 0) {
-            this._emitError( new Error("No serial ports detected."));
+            this._emitError(new Error("No serial ports detected."));
         }
         else {
             callback();
