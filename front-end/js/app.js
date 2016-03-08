@@ -6,7 +6,9 @@ const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = $("ports");
 const serialScanner = new SerialScanner();
-const portToElementMap = {};
+const portToElementMap = {}; // Cache of option elements for the port select
+const pollTime = 1000; // One second
+
 var last_notification = "";
 
 flashButton.addEventListener("click", event => {
@@ -96,7 +98,7 @@ function onError(error){
  */
 function init() {
     serialScanner.scan();
-    setInterval(() =>{ serialScanner.checkForChanges(); }, 1000);
+    setInterval(serialScanner.checkForChanges.bind(serialScanner), pollTime);
 }
 
 init();
