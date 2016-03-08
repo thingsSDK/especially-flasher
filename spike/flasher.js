@@ -90,7 +90,7 @@ EspComm.prototype.close = function() {
 
 EspComm.prototype.calculateChecksum = function(data) {
     var result = 0xEF;
-    for (var i = 0; i < data.size(); i++) {
+    for (var i = 0; i < data.length; i++) {
         result ^= data[i];
     }
     return result;
@@ -113,7 +113,7 @@ EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
     var port = this.port;
     return new Promise(function(resolve, reject) {
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.size()]);
+        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
         port.once('data', function(buffer) {    
