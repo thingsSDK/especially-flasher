@@ -2,7 +2,7 @@ var SerialPort = require("serialport").SerialPort;
 var bufferpack = require("bufferpack");
 var slip = require("slip");
 
-// /path/to/esptool/esptool.py --port /dev/ttyUSB0 --baud 115200 \
+// ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
 //   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
 //   0x0000 "boot_v1.4(b1).bin" 0x1000 espruino_esp8266_user1.bin \
 //   0x3FC000 esp_init_data_default.bin 0x3FE000 blank.bin
@@ -35,16 +35,36 @@ function slipReadParser(emitter, buffer) {
         var decoder = new slip.Decoder({
             onMessage: function(msg) {
                 emitter.emit('data', msg);
-            } 
+            }
         });
+        debug("Got buffer", buffer.length);
         decoder.decode(buffer);
+}
+
+var debug = function() {}
+
+function EspBoard(port) {
+    this.port = port;
+}
+
+EspBoard.prototype.resetIntoBootLoader = function() {
+    this.port.set({
+        rts: 1,
+        dtr: 1
+    });
+    
 }
 
 function EspComm(config) {
     this.port = new SerialPort(config.portName, {
         baud: config.baud,
         parser: slipReadParser
-    });
+    }, false);
+    var boardFactory = config.boardFactory ? config.boardFactory : EspBoard;
+    this.board = boardFactory(this.port);
+    if (config.debug) {
+        debug = config.debug;
+    }
     this.isOpen = false;
     this.config = config;
 }
@@ -56,6 +76,7 @@ EspComm.prototype.open = function() {
     this.port.open(function(error) {
         console.error("Could not open " + this.port);
     });
+    // THIS IS ASYNC!
     if (this.sync()) {
         return true;
     }
@@ -64,6 +85,7 @@ EspComm.prototype.open = function() {
 
 EspComm.prototype.close = function() {
     this.port.close();
+    this.isOpen = false;
 }
 
 EspComm.prototype.calculateChecksum = function(data) {
@@ -77,7 +99,7 @@ EspComm.prototype.calculateChecksum = function(data) {
 
 EspComm.prototype.sync = function() {
     self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-        .then(function(result)) {
+        .then(function(result) {
             // WIP  Some sort of loopedy loop.
             // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L239
         });
@@ -106,4 +128,6 @@ EspComm.prototype.sendCommand = function(command, data) {
     });
 };
 
+
+module.exports = EspComm
 
