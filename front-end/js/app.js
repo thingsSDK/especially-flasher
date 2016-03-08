@@ -18,14 +18,14 @@ serialScanner.on("ports", (ports) => {
    readyToFlash();
 });
 
-serialScanner.on("deviceAdded", (port ) => {
+serialScanner.on("deviceAdded", (port) => {
     appendPortToSelect(port);
-    new Notification(`Added: ${port}`)
+    new Notification(`Added: ${port}!`);
 });
 
 serialScanner.on("deviceRemoved", (port ) => {
     removePortFromSelect(port);
-    new Notification(`Removed: ${port}!`)
+    new Notification(`Removed: ${port}!`);
 });
 
 serialScanner.on("error", onError);
