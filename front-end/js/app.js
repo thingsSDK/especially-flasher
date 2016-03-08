@@ -1,12 +1,15 @@
+"use strict";
+
+//Relative to index.html not app.js
 const SerialScanner = require("../back-end/serial_scanner");
+const PortSelect = require("./js/port_select");
 
 function $(id) { return document.getElementById(id) }
 
 const flashButton = $("flash-button");
 const appStatus = $("status");
-const portsSelect = $("ports");
+const portsSelect = new PortSelect($("ports"));
 const serialScanner = new SerialScanner();
-const portToElementMap = {}; // Cache of option elements for the port select
 const pollTime = 1000; // One second
 
 var last_notification = "";
@@ -16,54 +19,21 @@ flashButton.addEventListener("click", event => {
 });
 
 serialScanner.on("ports", (ports) => {
-   addPortsToSelect(ports);
-   readyToFlash();
+    portsSelect.addAll(ports);
+    readyToFlash();
 });
 
 serialScanner.on("deviceAdded", (port) => {
-    appendPortToSelect(port);
+    portsSelect.add(port);
     new Notification(`Added: ${port}!`);
 });
 
 serialScanner.on("deviceRemoved", (port ) => {
-    removePortFromSelect(port);
+    portsSelect.remove(port);
     new Notification(`Removed: ${port}!`);
 });
 
 serialScanner.on("error", onError);
-
-/**
- * Removes existing comment, adds ports to the serial port SELECT element.
- * @param ports An Array of strings.
- */
-function addPortsToSelect(ports) {
-    //Empty Select
-    ports.forEach(port => {
-        appendPortToSelect(port);
-    });
-}
-
-/**
- * Appends a single port to the end of serial port SELECT element.
- * @param port
- */
-function appendPortToSelect(port){
-    const option = createPortOption(port);
-    portToElementMap[port] = option;
-    portsSelect.appendChild(option);
-}
-
-function createPortOption(port) {
-    const option = document.createElement("option");
-    option.textContent = port;
-    option.value = port;
-    return option;
-}
-
-function removePortFromSelect(port) {
-    portsSelect.removeChild(portToElementMap[port]);
-    delete portToElementMap[port];
-}
 
 /**
  * Updates UI to say it's ready
