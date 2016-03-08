@@ -1,36 +1,43 @@
-const availableSerialPorts = require("../back-end/available_serial_ports");
+const SerialScanner = require("../back-end/serial_scanner");
 
 function $(id) { return document.getElementById(id) }
 
 const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = $("ports");
+const serialScanner = new SerialScanner();
+const portToElementMap = {};
 var last_notification = "";
 
 flashButton.addEventListener("click", event => {
     var notification = new Notification("Flash Finished!");
 });
 
+serialScanner.on("ports", (ports) => {
+   addPortsToSelect(ports);
+   readyToFlash();
+});
 
-function checkPorts() {
-    availableSerialPorts()
-        .then(addPortsToSelect)
-        .then(readyToFlash)
-        .catch(onError);
+serialScanner.on("deviceAdded", (port ) => {
+    appendPortToSelect(port);
+    new Notification(`Added: ${port}`)
+});
 
-}
+serialScanner.on("deviceRemoved", (port ) => {
+    removePortFromSelect(port);
+    new Notification(`Removed: ${port}!`)
+});
+
+serialScanner.on("error", onError);
 
 /**
  * Removes existing comment, adds ports to the serial port SELECT element.
  * @param ports An Array of strings.
  */
 function addPortsToSelect(ports) {
-    //Gets currently selected
-    const previousValue = portsSelect.value;
     //Empty Select
-    portsSelect.innerHTML = "";
     ports.forEach(port => {
-        appendPortToSelect(port, previousValue)
+        appendPortToSelect(port);
     });
 }
 
@@ -38,12 +45,22 @@ function addPortsToSelect(ports) {
  * Appends a single port to the end of serial port SELECT element.
  * @param port
  */
-function appendPortToSelect(port, previousValue){
+function appendPortToSelect(port){
+    const option = createPortOption(port);
+    portToElementMap[port] = option;
+    portsSelect.appendChild(option);
+}
+
+function createPortOption(port) {
     const option = document.createElement("option");
     option.textContent = port;
     option.value = port;
-    option.selected = previousValue === port;
-    portsSelect.appendChild(option);
+    return option;
+}
+
+function removePortFromSelect(port) {
+    portsSelect.removeChild(portToElementMap[port]);
+    delete portToElementMap[port];
 }
 
 /**
@@ -78,8 +95,8 @@ function onError(error){
  * Sets up UI
  */
 function init() {
-    checkPorts();
-    setInterval(checkPorts, 1000);
+    serialScanner.scan();
+    setInterval(() =>{ serialScanner.checkForChanges(); }, 1000);
 }
 
 init();
