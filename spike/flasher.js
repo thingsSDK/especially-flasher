@@ -41,27 +41,56 @@ function slipReadParser(emitter, buffer) {
         decoder.decode(buffer);
 }
 
-var debug = function() {}
+var debug = function() {};
+
+// Is there a better way to do this?
+function delay(time) {
+    return new Promise(function(resolve, reject) {
+        debug("Sleepy time", time);
+        setTimeout(resolve, time);
+    });
+}
 
 function EspBoard(port) {
     this.port = port;
 }
 
 EspBoard.prototype.resetIntoBootLoader = function() {
-    this.port.set({
-        rts: 1,
-        dtr: 1
+    // RTS - Request To Send
+    // DTR - Data Terminal Ready
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        self.port.set({
+            rts: true,
+            dtr: true
+        }, function(error, result) {
+            if (error) {
+                reject(error);
+            }
+            resolve(result);
+        });    
+    }).then(function() {
+       return delay(5); 
+    }).then(function() {
+        self.port.set({rts: false}, function(error, result) {
+            debug("Second go", error, result);
+        }); 
+    }).then(function() {
+       return delay(250); 
+    }).then(function() {
+        self.port.set({dtr: false}, function(error, result) {
+            debug("Third go", error, result);
+        });      
     });
-    
 }
 
 function EspComm(config) {
     this.port = new SerialPort(config.portName, {
-        baud: config.baud,
+        baudRate: config.baudRate,
         parser: slipReadParser
     }, false);
-    var boardFactory = config.boardFactory ? config.boardFactory : EspBoard;
-    this.board = boardFactory(this.port);
+    var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
+    this.board = new BoardFactory(this.port);
     if (config.debug) {
         debug = config.debug;
     }
@@ -70,23 +99,25 @@ function EspComm(config) {
 }
 
 EspComm.prototype.open = function() {
-    if (this.isOpen) {
-        return true;
-    }
-    this.port.open(function(error) {
-        console.error("Could not open " + this.port);
+    var self = this;
+    return new Promise(function(resolve, reject) {
+        self.port.open(function(error) {
+            debug("Opening port...", self.port);
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    }).then(function() {
+        return self.sync();
     });
-    // THIS IS ASYNC!
-    if (this.sync()) {
-        return true;
-    }
-    return false;
-}
+};
 
 EspComm.prototype.close = function() {
     this.port.close();
     this.isOpen = false;
-}
+};
 
 EspComm.prototype.calculateChecksum = function(data) {
     var result = 0xEF;
@@ -94,17 +125,30 @@ EspComm.prototype.calculateChecksum = function(data) {
         result ^= data[i];
     }
     return result;
-}
+};
 
 
 EspComm.prototype.sync = function() {
-    self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-        .then(function(result) {
-            // WIP  Some sort of loopedy loop.
-            // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L239
+    var self = this;
+    self.board.resetIntoBootLoader()
+        .then(function() {
+            return new Promise(function(resolve, reject) {
+                self.port.flush(function(error) {
+                    if (error) {
+                        reject(error);
+                    }
+                    resolve();
+                });
+            }).then(function() {
+                return self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                    .then(function(result) {
+                        // There is some magic here
+                        debug("Should we retry 7 times??");
+                    });
+            });
+                     
         });
-    
-}
+};
 
 // TODO:csd - How to make the commands pretty?
 // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
@@ -113,7 +157,7 @@ EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
     var port = this.port;
     return new Promise(function(resolve, reject) {
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length]);
+        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
         port.once('data', function(buffer) {    
