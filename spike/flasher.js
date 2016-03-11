@@ -94,7 +94,6 @@ class EspComm {
     constructor(config) {
         this.port = new SerialPort(config.portName, {
             baudRate: config.baudRate,
-            flowControl: false,
             parser: slipReadParser
         }, false);
         this.port.on('error', (error) => debug("PORT ERROR", error));
@@ -151,8 +150,8 @@ class EspComm {
                     });
                 });
             }).then(() => {
-                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
-                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
+                // FIXME:csd - How to send break?
+                // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
                 this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
                     .then((result) => {
                         debug("Well...I'll be", result);
