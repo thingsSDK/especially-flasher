@@ -134,39 +134,39 @@ class EspComm {
     sync() {
         return this.board.resetIntoBootLoader()
             .then(() => {
+                return delay(100)
+            }).then(() => {
                 return new Promise((resolve, reject) => {
                     this.port.flush((error) => {
                         if (error) {
                             reject(error);
                         }
+                        debug("Port flushed");
                         resolve();
                     });
-                }).then(() => {
-                    return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-                        .then((result) => {
-                            // There is some magic here
-                            debug("Should we retry 7 times??");
-                        });
                 });
-
-            });
+            }).then(() => {
+                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                    .then((result) => {
+                        // There is some magic here
+                        debug("Should we retry 7 times??");
+                    });
+           });
     }
 
     // TODO:csd - How to make the commands pretty?
     // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
     // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
     sendCommand(command, data) {
-        // ???:csd - Is this how you do OO anymore?
-        var port = this.port;
         return new Promise((resolve, reject) => {
             var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
-            port.write(slip.encode(sendHeader), (err, result) => {
+            this.port.write(slip.encode(sendHeader), (err, result) => {
                 debug("Sending header", err, result);
             });
-            port.write(slip.encode(data), (err, result) => {
-                debug("Sending budy", err, result);
+            this.port.write(slip.encode(data), (err, result) => {
+                debug("Sending body", err, result);
             });
-            port.on('data', (buffer) => {
+            this.port.on('data', (buffer) => {
                 debug("Port got data", buffer);
                 var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
                 // FIXME:csd - Sanity check here regarding direction???
