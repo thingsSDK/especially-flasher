@@ -24,12 +24,12 @@
   },
   "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
   "dependencies": {
+    "bufferpack": "0.0.6",
     "node-binary": "^1.1.0",
     "serialport": "^2.0.6",
     "slip": "^1.0.2"
   },
   "devDependencies": {
     "electron-prebuilt": "^0.36.9",
-    "slip": "^1.0.2"
   }
 }
