@@ -80,7 +80,7 @@ class EspBoard {
                 debug("Second go", error, result);
             });
         }).then(() => {
-            return delay(5);
+            return delay(50);
         }).then(() => {
             this.port.set({dtr: false}, (error, result) => {
                 debug("Third go", error, result);
@@ -117,6 +117,7 @@ class EspComm {
                 }
             });
         }).then(() => {
+            debug("Syncing");
             return this.sync();
         });
     }
