@@ -33,7 +33,7 @@ const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
 function slipReadParser(emitter, buffer) {
         // This is the pyramid of doom right?
         var decoder = new slip.Decoder({
-            onMessage: function(msg) {
+            onMessage: (msg) => {
                 emitter.emit('data', msg);
             }
         });
@@ -45,7 +45,7 @@ var debug = function() {};
 
 // Is there a better way to do this?
 function delay(time) {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         debug("Sleepy time", time);
         setTimeout(resolve, time);
     });
@@ -59,7 +59,7 @@ EspBoard.prototype.resetIntoBootLoader = function() {
     // RTS - Request To Send
     // DTR - Data Terminal Ready
     var self = this;
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         self.port.set({
             rts: true,
             dtr: true
@@ -69,15 +69,15 @@ EspBoard.prototype.resetIntoBootLoader = function() {
             }
             resolve(result);
         });    
-    }).then(function() {
+    }).then(() => {
        return delay(5); 
-    }).then(function() {
+    }).then(() => {
         self.port.set({rts: false}, function(error, result) {
             debug("Second go", error, result);
         }); 
-    }).then(function() {
+    }).then(() => {
        return delay(250); 
-    }).then(function() {
+    }).then(() => {
         self.port.set({dtr: false}, function(error, result) {
             debug("Third go", error, result);
         });      
@@ -100,7 +100,7 @@ function EspComm(config) {
 
 EspComm.prototype.open = function() {
     var self = this;
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         self.port.open(function(error) {
             debug("Opening port...", self.port);
             if (error) {
@@ -109,7 +109,7 @@ EspComm.prototype.open = function() {
                 resolve();
             }
         });
-    }).then(function() {
+    }).then(() => {
         return self.sync();
     });
 };
@@ -131,17 +131,17 @@ EspComm.prototype.calculateChecksum = function(data) {
 EspComm.prototype.sync = function() {
     var self = this;
     return self.board.resetIntoBootLoader()
-        .then(function() {
-            return new Promise(function(resolve, reject) {
+        .then(() => {
+            return new Promise((resolve, reject) => {
                 self.port.flush(function(error) {
                     if (error) {
                         reject(error);
                     }
                     resolve();
                 });
-            }).then(function() {
+            }).then(() => {
                 return self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-                    .then(function(result) {
+                    .then((result) => {
                         // There is some magic here
                         debug("Should we retry 7 times??");
                     });
@@ -157,11 +157,11 @@ EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
     var self = this;
     var port = this.port;
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, self.calculateChecksum(data)]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
-        port.on('data', function(buffer) {    
+        port.on('data', (buffer) => {    
             var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
             // FIXME:csd - Sanity check here regarding direction???
             resolve({
