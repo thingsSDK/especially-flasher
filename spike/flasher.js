@@ -58,9 +58,8 @@ function EspBoard(port) {
 EspBoard.prototype.resetIntoBootLoader = function() {
     // RTS - Request To Send
     // DTR - Data Terminal Ready
-    var self = this;
     return new Promise((resolve, reject) => {
-        self.port.set({
+        this.port.set({
             rts: true,
             dtr: true
         }, function(error, result) {
@@ -72,13 +71,13 @@ EspBoard.prototype.resetIntoBootLoader = function() {
     }).then(() => {
        return delay(5); 
     }).then(() => {
-        self.port.set({rts: false}, function(error, result) {
+        this.port.set({rts: false}, (error, result) => {
             debug("Second go", error, result);
         }); 
     }).then(() => {
        return delay(250); 
     }).then(() => {
-        self.port.set({dtr: false}, function(error, result) {
+        this.port.set({dtr: false}, (error, result) => {
             debug("Third go", error, result);
         });      
     });
@@ -99,10 +98,9 @@ function EspComm(config) {
 }
 
 EspComm.prototype.open = function() {
-    var self = this;
     return new Promise((resolve, reject) => {
-        self.port.open(function(error) {
-            debug("Opening port...", self.port);
+        this.port.open((error) => {
+            debug("Opening port...", this.port);
             if (error) {
                 reject(error);
             } else {
@@ -110,7 +108,7 @@ EspComm.prototype.open = function() {
             }
         });
     }).then(() => {
-        return self.sync();
+        return this.sync();
     });
 };
 
@@ -129,18 +127,17 @@ EspComm.prototype.calculateChecksum = function(data) {
 
 
 EspComm.prototype.sync = function() {
-    var self = this;
-    return self.board.resetIntoBootLoader()
+    return this.board.resetIntoBootLoader()
         .then(() => {
             return new Promise((resolve, reject) => {
-                self.port.flush(function(error) {
+                this.port.flush((error) => {
                     if (error) {
                         reject(error);
                     }
                     resolve();
                 });
             }).then(() => {
-                return self.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
                     .then((result) => {
                         // There is some magic here
                         debug("Should we retry 7 times??");
@@ -155,10 +152,9 @@ EspComm.prototype.sync = function() {
 // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
 EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
-    var self = this;
     var port = this.port;
     return new Promise((resolve, reject) => {
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, self.calculateChecksum(data)]);
+        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
         port.on('data', (buffer) => {    
