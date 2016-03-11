@@ -130,7 +130,7 @@ EspComm.prototype.calculateChecksum = function(data) {
 
 EspComm.prototype.sync = function() {
     var self = this;
-    self.board.resetIntoBootLoader()
+    return self.board.resetIntoBootLoader()
         .then(function() {
             return new Promise(function(resolve, reject) {
                 self.port.flush(function(error) {
@@ -155,12 +155,13 @@ EspComm.prototype.sync = function() {
 // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
 EspComm.prototype.sendCommand = function(command, data) {
     // ???:csd - Is this how you do OO anymore?
+    var self = this;
     var port = this.port;
     return new Promise(function(resolve, reject) {
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
+        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, self.calculateChecksum(data)]);
         port.write(slip.encode(sendHeader));
         port.write(slip.encode(data));
-        port.once('data', function(buffer) {    
+        port.on('data', function(buffer) {    
             var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
             // FIXME:csd - Sanity check here regarding direction???
             resolve({
