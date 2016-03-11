@@ -151,13 +151,17 @@ EspComm.prototype.sync = function() {
 // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
 // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
 EspComm.prototype.sendCommand = function(command, data) {
-    // ???:csd - Is this how you do OO anymore?
-    var port = this.port;
     return new Promise((resolve, reject) => {
+        debug("About to send command", command);
         var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
-        port.write(slip.encode(sendHeader));
-        port.write(slip.encode(data));
-        port.on('data', (buffer) => {    
+        this.port.write(slip.encode(sendHeader), (err, result) => {
+            debug("Sending header", err, result);
+        });
+        this.port.write(slip.encode(data), (err, result) => {
+            debug("Sending data", err, result);
+        });
+        this.port.on('data', (buffer) => {
+            debug("Data received", buffer);
             var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
             // FIXME:csd - Sanity check here regarding direction???
             resolve({
