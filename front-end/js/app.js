@@ -1,50 +1,39 @@
-const availableSerialPorts = require("../back-end/available_serial_ports");
+"use strict";
+
+//Relative to index.html not app.js
+const SerialScanner = require("../back-end/serial_scanner");
+const PortSelect = require("./js/port_select");
 
 function $(id) { return document.getElementById(id) }
 
 const flashButton = $("flash-button");
 const appStatus = $("status");
-const portsSelect = $("ports");
+const portsSelect = new PortSelect($("ports"));
+const serialScanner = new SerialScanner();
+const pollTime = 1000; // One second
+
 var last_notification = "";
 
 flashButton.addEventListener("click", event => {
     var notification = new Notification("Flash Finished!");
 });
 
+serialScanner.on("ports", (ports) => {
+    portsSelect.addAll(ports);
+    readyToFlash();
+});
 
-function checkPorts() {
-    availableSerialPorts()
-        .then(addPortsToSelect)
-        .then(readyToFlash)
-        .catch(onError);
+serialScanner.on("deviceAdded", (port) => {
+    portsSelect.add(port);
+    new Notification(`Added: ${port}!`);
+});
 
-}
+serialScanner.on("deviceRemoved", (port ) => {
+    portsSelect.remove(port);
+    new Notification(`Removed: ${port}!`);
+});
 
-/**
- * Removes existing comment, adds ports to the serial port SELECT element.
- * @param ports An Array of strings.
- */
-function addPortsToSelect(ports) {
-    //Gets currently selected
-    const previousValue = portsSelect.value;
-    //Empty Select
-    portsSelect.innerHTML = "";
-    ports.forEach(port => {
-        appendPortToSelect(port, previousValue)
-    });
-}
-
-/**
- * Appends a single port to the end of serial port SELECT element.
- * @param port
- */
-function appendPortToSelect(port, previousValue){
-    const option = document.createElement("option");
-    option.textContent = port;
-    option.value = port;
-    option.selected = previousValue === port;
-    portsSelect.appendChild(option);
-}
+serialScanner.on("error", onError);
 
 /**
  * Updates UI to say it's ready
@@ -78,8 +67,8 @@ function onError(error){
  * Sets up UI
  */
 function init() {
-    checkPorts();
-    setInterval(checkPorts, 1000);
+    serialScanner.scan();
+    setInterval(serialScanner.checkForChanges.bind(serialScanner), pollTime);
 }
 
 init();
