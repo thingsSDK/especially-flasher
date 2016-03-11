@@ -1,3 +1,5 @@
+"use strict";
+
 var SerialPort = require("serialport").SerialPort;
 var bufferpack = require("bufferpack");
 var slip = require("slip");
@@ -31,148 +33,154 @@ const commands = {
 const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
 
 function slipReadParser(emitter, buffer) {
-        // This is the pyramid of doom right?
-        var decoder = new slip.Decoder({
-            onMessage: (msg) => {
-                emitter.emit('data', msg);
-            }
-        });
-        debug("Got buffer", buffer.length);
-        decoder.decode(buffer);
+    // This is the pyramid of doom right?
+    var decoder = new slip.Decoder({
+        onMessage: (msg) => {
+            emitter.emit('data', msg);
+        }
+    });
+    debug("Got buffer", buffer.length);
+    decoder.decode(buffer);
 }
 
 var debug = function() {};
 
-// Is there a better way to do this?
 function delay(time) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         debug("Sleepy time", time);
         setTimeout(resolve, time);
     });
 }
 
-function EspBoard(port) {
-    this.port = port;
-}
-
-EspBoard.prototype.resetIntoBootLoader = function() {
-    // RTS - Request To Send
-    // DTR - Data Terminal Ready
-    return new Promise((resolve, reject) => {
-        this.port.set({
-            rts: true,
-            dtr: true
-        }, function(error, result) {
-            if (error) {
-                reject(error);
-            }
-            resolve(result);
-        });    
-    }).then(() => {
-       return delay(5); 
-    }).then(() => {
-        this.port.set({rts: false}, (error, result) => {
-            debug("Second go", error, result);
-        }); 
-    }).then(() => {
-       return delay(250); 
-    }).then(() => {
-        this.port.set({dtr: false}, (error, result) => {
-            debug("Third go", error, result);
-        });      
-    });
-}
-
-function EspComm(config) {
-    this.port = new SerialPort(config.portName, {
-        baudRate: config.baudRate,
-        parser: slipReadParser
-    }, false);
-    var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
-    this.board = new BoardFactory(this.port);
-    if (config.debug) {
-        debug = config.debug;
+class EspBoard {
+    constructor(port) {
+        this.port = port;
     }
-    this.isOpen = false;
-    this.config = config;
-}
 
-EspComm.prototype.open = function() {
-    return new Promise((resolve, reject) => {
-        this.port.open((error) => {
-            debug("Opening port...", this.port);
-            if (error) {
-                reject(error);
-            } else {
-                resolve();
-            }
+    resetIntoBootLoader() {
+        // RTS - Request To Send
+        // DTR - Data Terminal Ready
+        return new Promise((resolve, reject) => {
+            this.port.set({
+                rts: true,
+                dtr: true
+            }, function(error, result) {
+                if (error) {
+                    reject(error);
+                }
+                resolve(result);
+            });
+        }).then(() => {
+            return delay(5);
+        }).then(() => {
+            this.port.set({rts: false}, (error, result) => {
+                debug("Second go", error, result);
+            });
+        }).then(() => {
+            return delay(250);
+        }).then(() => {
+            this.port.set({dtr: false}, (error, result) => {
+                debug("Third go", error, result);
+            });
         });
-    }).then(() => {
-        return this.sync();
-    });
-};
-
-EspComm.prototype.close = function() {
-    this.port.close();
-    this.isOpen = false;
-};
-
-EspComm.prototype.calculateChecksum = function(data) {
-    var result = 0xEF;
-    for (var i = 0; i < data.length; i++) {
-        result ^= data[i];
     }
-    return result;
-};
+}
 
 
-EspComm.prototype.sync = function() {
-    return this.board.resetIntoBootLoader()
-        .then(() => {
-            return new Promise((resolve, reject) => {
-                this.port.flush((error) => {
-                    if (error) {
-                        reject(error);
-                    }
+class EspComm {
+    constructor(config) {
+        this.port = new SerialPort(config.portName, {
+            baudRate: config.baudRate,
+            parser: slipReadParser
+        }, false);
+        var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
+        this.board = new BoardFactory(this.port);
+        if (config.debug) {
+            debug = config.debug;
+        }
+        this.isOpen = false;
+        this.config = config;
+    }
+
+    open() {
+        return new Promise((resolve, reject) => {
+            this.port.open((error) => {
+                debug("Opening port...", this.port);
+                if (error) {
+                    reject(error);
+                } else {
                     resolve();
-                });
-            }).then(() => {
-                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-                    .then((result) => {
-                        // There is some magic here
-                        debug("Should we retry 7 times??");
+                }
+            });
+        }).then(() => {
+            return this.sync();
+        });
+    }
+
+    close() {
+        this.port.close();
+        this.isOpen = false;
+    }
+
+    calculateChecksum(data) {
+        var result = 0xEF;
+        for (var i = 0; i < data.length; i++) {
+            result ^= data[i];
+        }
+        return result;
+    }
+
+
+    sync() {
+        return this.board.resetIntoBootLoader()
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    this.port.flush((error) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        resolve();
                     });
+                }).then(() => {
+                    return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                        .then((result) => {
+                            // There is some magic here
+                            debug("Should we retry 7 times??");
+                        });
+                });
+
             });
-                     
-        });
-};
+    }
 
-// TODO:csd - How to make the commands pretty?
-// https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
-// https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
-EspComm.prototype.sendCommand = function(command, data) {
-    return new Promise((resolve, reject) => {
-        debug("About to send command", command);
-        var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
-        this.port.write(slip.encode(sendHeader), (err, result) => {
-            debug("Sending header", err, result);
-        });
-        this.port.write(slip.encode(data), (err, result) => {
-            debug("Sending data", err, result);
-        });
-        this.port.on('data', (buffer) => {
-            debug("Data received", buffer);
-            var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
-            // FIXME:csd - Sanity check here regarding direction???
-            resolve({
-                header: receiveHeader,
-                // Result follows the header
-                data: buffer.slice(8)
+    // TODO:csd - How to make the commands pretty?
+    // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
+    // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
+    sendCommand(command, data) {
+        // ???:csd - Is this how you do OO anymore?
+        var port = this.port;
+        return new Promise((resolve, reject) => {
+            var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
+            port.write(slip.encode(sendHeader), (err, result) => {
+                debug("Sending header", err, result);
+            });
+            port.write(slip.encode(data), (err, result) => {
+                debug("Sending budy", err, result);
+            });
+            port.on('data', (buffer) => {
+                debug("Port got data", buffer);
+                var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
+                // FIXME:csd - Sanity check here regarding direction???
+                resolve({
+                    header: receiveHeader,
+                    // Result follows the header
+                    data: buffer.slice(8)
+                });
             });
         });
-    });
-};
+    }
+}
 
 
-module.exports = EspComm
+
+module.exports = EspComm;
 
