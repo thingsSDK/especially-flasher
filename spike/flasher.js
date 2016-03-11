@@ -63,8 +63,8 @@ class EspBoard {
         return new Promise((resolve, reject) => {
             this.port.set({
                 rts: true,
-                dtr: true
-            }, function(error, result) {
+                dtr: false
+            }, (error, result) => {
                 if (error) {
                     reject(error);
                 }
@@ -73,11 +73,14 @@ class EspBoard {
         }).then(() => {
             return delay(5);
         }).then(() => {
-            this.port.set({rts: false}, (error, result) => {
+            this.port.set({
+                dtr: true,
+                rts: false
+            }, (error, result) => {
                 debug("Second go", error, result);
             });
         }).then(() => {
-            return delay(250);
+            return delay(5);
         }).then(() => {
             this.port.set({dtr: false}, (error, result) => {
                 debug("Third go", error, result);
@@ -91,8 +94,10 @@ class EspComm {
     constructor(config) {
         this.port = new SerialPort(config.portName, {
             baudRate: config.baudRate,
+            flowControl: false,
             parser: slipReadParser
         }, false);
+        this.port.on('error', (error) => debug("PORT ERROR", error));
         var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
         this.board = new BoardFactory(this.port);
         if (config.debug) {
@@ -146,11 +151,13 @@ class EspComm {
                     });
                 });
             }).then(() => {
-                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
+                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
+                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
                     .then((result) => {
-                        // There is some magic here
-                        debug("Should we retry 7 times??");
-                    });
+                        debug("Well...I'll be", result);
+                    }); 
+                
            });
     }
 
@@ -159,12 +166,25 @@ class EspComm {
     // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
     sendCommand(command, data) {
         return new Promise((resolve, reject) => {
-            var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, data.length, this.calculateChecksum(data)]);
+            var length = 0;
+            var checksum = 0;
+            if (data) {
+                length = data.length;
+                checksum = this.calculateChecksum(data);
+            }
+            this.port.write("\xc0");
+            var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
             this.port.write(slip.encode(sendHeader), (err, result) => {
                 debug("Sending header", err, result);
             });
             this.port.write(slip.encode(data), (err, result) => {
                 debug("Sending body", err, result);
+            });
+            this.port.write("\xc0");
+            delay(5).then(() => {
+                this.port.drain((err, res) => {
+                    debug("Draining", err, res);
+                });
             });
             this.port.on('data', (buffer) => {
                 debug("Port got data", buffer);
