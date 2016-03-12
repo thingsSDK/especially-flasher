@@ -30,16 +30,22 @@ const commands = {
     NO_COMMAND: 0xFF
 };
 
+const SLIP_SUBSTITUTIONS = {
+    '\xdb': '\xdb\xdd',
+    '\xc0': '\xdb\xdc' 
+};
+
 const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
 
 function slipReadParser(emitter, buffer) {
     // This is the pyramid of doom right?
     var decoder = new slip.Decoder({
         onMessage: (msg) => {
+            debug("Got message!", msg);
             emitter.emit('data', msg);
         }
     });
-    debug("Got buffer", buffer.length);
+    debug("Got buffer", buffer.length, buffer);
     decoder.decode(buffer);
 }
 
@@ -60,6 +66,7 @@ class EspBoard {
     resetIntoBootLoader() {
         // RTS - Request To Send
         // DTR - Data Terminal Ready
+        debug("Resetting board");
         return new Promise((resolve, reject) => {
             this.port.set({
                 rts: true,
@@ -117,7 +124,6 @@ class EspComm {
                 }
             });
         }).then(() => {
-            debug("Syncing");
             return this.sync();
         });
     }
@@ -136,7 +142,8 @@ class EspComm {
     }
 
 
-    sync() {
+    _syncAttempt() {
+        debug("Syncing");
         return this.board.resetIntoBootLoader()
             .then(() => {
                 return delay(100)
@@ -153,12 +160,39 @@ class EspComm {
             }).then(() => {
                 // FIXME:csd - How to send break?
                 // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
-                this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
+                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
                     .then((result) => {
                         debug("Well...I'll be", result);
                     }); 
                 
            });
+    }
+    
+    sync() {
+        // Third time's a charm?
+        return this._syncAttempt()
+            .then(() => {
+                return this._syncAttempt();   
+            }).then(() => {
+                return this._syncAttempt();
+            });
+    }
+    
+    write(packet) {
+        // Writes a buffer using SLIP encoding
+        var slipped = new Buffer(packet.length);
+        slipped.write("\xc0");
+        for (var i = 0; i < packet.length; i++) {
+            if (packet[i] in SLIP_SUBSTITUTIONS) {
+                slipped.write(SLIP_SUBSTITUTIONS[packet[i]]);
+            } else {
+                slipped.write(packet[i]);
+            }
+        }
+        slipped.write("\xc0");
+        this.port.write(slipped, (err, result) => {
+            debug("Wrote", slipped, result);
+        });
     }
 
     // TODO:csd - How to make the commands pretty?
@@ -168,33 +202,31 @@ class EspComm {
         return new Promise((resolve, reject) => {
             var length = 0;
             var checksum = 0;
-            if (data) {
-                length = data.length;
-                checksum = this.calculateChecksum(data);
+            if (command != commands.NO_COMMAND) {
+                if (data) {
+                    length = data.length;
+                    checksum = this.calculateChecksum(data);
+                }
+                var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
+                this.write(sendHeader + data);
             }
-            this.port.write("\xc0");
-            var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
-            this.port.write(slip.encode(sendHeader), (err, result) => {
-                debug("Sending header", err, result);
-            });
-            this.port.write(slip.encode(data), (err, result) => {
-                debug("Sending body", err, result);
-            });
-            this.port.write("\xc0");
+            
             delay(5).then(() => {
                 this.port.drain((err, res) => {
                     debug("Draining", err, res);
                 });
-            });
-            this.port.on('data', (buffer) => {
-                debug("Port got data", buffer);
-                var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
-                // FIXME:csd - Sanity check here regarding direction???
-                resolve({
-                    header: receiveHeader,
-                    // Result follows the header
-                    data: buffer.slice(8)
-                });
+            }).then(() => {
+                this.port.on('data', (buffer) => {
+                    debug("Port got data", buffer);
+                    var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
+                    debug("ARRRRGGGGHHH");
+                    // FIXME:csd - Sanity check here regarding direction???
+                    resolve({
+                        header: receiveHeader,
+                        // Result follows the header
+                        data: buffer.slice(8)
+                    });
+                });    
             });
         });
     }
