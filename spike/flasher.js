@@ -1,8 +1,8 @@
 "use strict";
 
-var SerialPort = require("serialport").SerialPort;
-var bufferpack = require("bufferpack");
-var slip = require("slip");
+const SerialPort = require("serialport").SerialPort;
+const bufferpack = require("bufferpack");
+const EventEmitter = require("events");
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
 //   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
@@ -30,24 +30,16 @@ const commands = {
     NO_COMMAND: 0xFF
 };
 
-const SLIP_SUBSTITUTIONS = {
-    '\xdb': '\xdb\xdd',
-    '\xc0': '\xdb\xdc' 
-};
+// https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol
+
+const SLIP = {
+    frameEnd: "\xc0",
+    frameEscape: "\xdb",
+    transposedFrameEnd: "\xdc",
+    transposedFrameEscape: "\xdd"
+}
 
 const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
-
-function slipReadParser(emitter, buffer) {
-    // This is the pyramid of doom right?
-    var decoder = new slip.Decoder({
-        onMessage: (msg) => {
-            debug("Got message!", msg);
-            emitter.emit('data', msg);
-        }
-    });
-    debug("Got buffer", buffer.length, buffer);
-    decoder.decode(buffer);
-}
 
 var debug = function() {};
 
@@ -72,6 +64,7 @@ class EspBoard {
                 rts: true,
                 dtr: false
             }, (error, result) => {
+                debug("RTS on, DTR off", error, result);
                 if (error) {
                     reject(error);
                 }
@@ -84,33 +77,56 @@ class EspBoard {
                 dtr: true,
                 rts: false
             }, (error, result) => {
-                debug("Second go", error, result);
+                debug("RTS off, DTR on", error, result);
             });
         }).then(() => {
             return delay(50);
         }).then(() => {
             this.port.set({dtr: false}, (error, result) => {
-                debug("Third go", error, result);
+                debug("DTR off", error, result);
             });
         });
     }
 }
 
 
-class EspComm {
+class EspComm extends EventEmitter {
     constructor(config) {
-        this.port = new SerialPort(config.portName, {
-            baudRate: config.baudRate,
-            parser: slipReadParser
-        }, false);
-        this.port.on('error', (error) => debug("PORT ERROR", error));
-        var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
-        this.board = new BoardFactory(this.port);
+        super();
         if (config.debug) {
             debug = config.debug;
         }
+        this.port = this.initializePort(config);
+        var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
+        this.board = new BoardFactory(this.port);
         this.isOpen = false;
         this.config = config;
+    }
+    
+    initializePort(config) {
+        var port = new SerialPort(config.portName, {
+            baudRate: config.baudRate
+        }, false);
+        port.on('error', (error) => debug("PORT ERROR", error));
+        port.on('data', (buffer) => {
+            debug("Data received", buffer.length, buffer);
+            let slipStart = buffer.indexOf(SLIP.frameEnd);
+            while (slipStart >= 0) {
+                debug("Suspected SLIP response", slipStart);
+                let slipEnd = buffer.indexOf(SLIP.frameEnd, slipStart + 1);
+                if (slipEnd > slipStart) {
+                    let slipped = buffer.slice(slipStart, slipEnd);
+                    this.emit("responseReceived", slipped);
+                    slipStart = buffer.indexOf(SLIP.frameEnd, slipEnd + 1);
+                } else {
+                    slipStart = -1;
+                }   
+            }
+        });
+        this.on("responseReceived", (slipped) => {
+            debug("SLIP found", slipped.length, slipped); 
+        });
+        return port;
     }
 
     open() {
@@ -124,7 +140,7 @@ class EspComm {
                 }
             });
         }).then(() => {
-            return this.sync();
+            return this.connect();
         });
     }
 
@@ -134,6 +150,7 @@ class EspComm {
     }
 
     calculateChecksum(data) {
+        // Magic Checksum starts with 0xEF
         var result = 0xEF;
         for (var i = 0; i < data.length; i++) {
             result ^= data[i];
@@ -142,8 +159,14 @@ class EspComm {
     }
 
 
-    _syncAttempt() {
+    sync() {
         debug("Syncing");
+        // FIXME:csd - How to send break?
+        // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
+        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
+    }
+    
+    connect() {
         return this.board.resetIntoBootLoader()
             .then(() => {
                 return delay(100)
@@ -158,40 +181,31 @@ class EspComm {
                     });
                 });
             }).then(() => {
-                // FIXME:csd - How to send break?
-                // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
-                return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME)
-                    .then((result) => {
-                        debug("Well...I'll be", result);
-                    }); 
-                
-           });
-    }
-    
-    sync() {
-        // Third time's a charm?
-        return this._syncAttempt()
-            .then(() => {
-                return this._syncAttempt();   
-            }).then(() => {
-                return this._syncAttempt();
+                this.sync();
             });
     }
     
+    /**
+     * Writes a SLIP packet to the port
+     */
     write(packet) {
-        // Writes a buffer using SLIP encoding
-        var slipped = new Buffer(packet.length);
-        slipped.write("\xc0");
+        // Probably larger than this due to escaping
+        var slipped = new Buffer(packet.length + 2);
+        slipped.write(SLIP.frameEnd);
         for (var i = 0; i < packet.length; i++) {
-            if (packet[i] in SLIP_SUBSTITUTIONS) {
-                slipped.write(SLIP_SUBSTITUTIONS[packet[i]]);
+            if (packet[i] === SLIP.frameEnd) {
+                slipped.write(SLIP.frameEscape);
+                slipped.write(SLIP.transposedFrameEnd);
+            } else if (packet[i] === SLIP.frameEscape) {
+                slipped.write(SLIP.frameEscape);
+                slipped.write(SLIP.transposedFrameEscape);
             } else {
                 slipped.write(packet[i]);
             }
         }
-        slipped.write("\xc0");
+        slipped.write(SLIP.frameEnd);
         this.port.write(slipped, (err, result) => {
-            debug("Wrote", slipped, result);
+            debug("Wrote", slipped.length, slipped, result);
         });
     }
 
@@ -214,19 +228,8 @@ class EspComm {
             delay(5).then(() => {
                 this.port.drain((err, res) => {
                     debug("Draining", err, res);
+                    resolve();  
                 });
-            }).then(() => {
-                this.port.on('data', (buffer) => {
-                    debug("Port got data", buffer);
-                    var receiveHeader = bufferpack.unpack(formats.bootloader_packet_header, buffer.readInt8(0));
-                    debug("ARRRRGGGGHHH");
-                    // FIXME:csd - Sanity check here regarding direction???
-                    resolve({
-                        header: receiveHeader,
-                        // Result follows the header
-                        data: buffer.slice(8)
-                    });
-                });    
             });
         });
     }
