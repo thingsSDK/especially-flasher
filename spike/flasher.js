@@ -55,6 +55,21 @@ function delay(time) {
     });
 }
 
+function dumbPromise() {
+    return new Promise((resolve, reject) => {
+        console.log("Hello!");
+        resolve("Shoe!"); 
+    });
+}
+
+function repeatPromise(times, callback) {
+    let chain = Promise.resolve();
+    for (let i = 0; i < times; i++) {
+        chain = chain.then(() => callback());    
+    }
+    return chain;
+}
+
 class EspBoard {
     constructor(port) {
         this.port = port;
@@ -85,11 +100,10 @@ class EspBoard {
                 debug("RTS off, DTR on", error, result);
             });
         }).then(() => {
-            return delay(5);
+            return delay(50);
         }).then(() => {
             this.port.set({dtr: false}, (error, result) => {
                 debug("DTR off", error, result);
-                this.port.resume();
             });
         });
     }
@@ -194,38 +208,40 @@ class EspComm {
     }
 
 
-    sync() {
+    sync(ignoreResponse) {
         debug("Syncing");
         // FIXME:csd - How to send break?
         // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
-        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME).then((response) => {
+        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse).then((response) => {
             debug("Sync response completed!", response);
         });
     }
     
     connect() {
-        return new Promise((resolve, reject) => {
-            this._connectAttempt()
-                .then(() => resolve());
-               
-        });
+        return repeatPromise(5, () => this._connectAttempt())
+            .then(() => this.sync());
     }
     
     _connectAttempt() {
-        // Python does a 5x loop here
         return this.board.resetIntoBootLoader()
-            .then(() => {
+                .then(() => delay(100))
                 // And a 5x loop here
-                return new Promise((resolve, reject) => {
+                .then(() => {
+                    return repeatPromise(5, () => this._flushAndSync())
+                });
+    }
+    
+    _flushAndSync() {
+        return new Promise((resolve, reject) => {
                     this.port.flush((error) => {
                         if (error) {
                             reject(error);
                         }
                         debug("Port flushed");
+                        
                         resolve();
                     });
-                });
-            }).then(() => this.sync());
+            }).then(() => this.sync(true));
     }
     
     /**
@@ -258,7 +274,7 @@ class EspComm {
     // TODO:csd - How to make the commands pretty?
     // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
     // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
-    sendCommand(command, data) {
+    sendCommand(command, data, ignoreResponse) {
         return new Promise((resolve, reject) => {
             var length = 0;
             var checksum = 0;
@@ -267,25 +283,29 @@ class EspComm {
                     length = data.length;
                     checksum = this.calculateChecksum(data);
                 }
-                var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
+                let sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
                 this.write(Buffer.concat([sendHeader, data], sendHeader.length + data.length));
             }
             
             delay(5).then(() => {
                 this.port.drain((err, res) => {
                     debug("Draining", err, res);
+                    if (ignoreResponse) {
+                        resolve("Response was ignored");
+                    }
                 });
             });
-            let commandName = commandToKey(command);
-            if (this.emitter.listeners(commandName).length === 0) {
-                debug("Listening once", commandName);
-                this.emitter.once(commandName, (response) => {
-                    resolve(response);    
-                });    
-            } else {
-                debug("Someone is already awaiting", commandName);
+            if (!ignoreResponse) {
+                let commandName = commandToKey(command);
+                if (this.emitter.listeners(commandName).length === 0) {
+                    debug("Listening once", commandName);
+                    this.emitter.once(commandName, (response) => {
+                        resolve(response);    
+                    });    
+                } else {
+                    debug("Someone is already awaiting", commandName);
+                }    
             }
-            
         });
     }
 }
