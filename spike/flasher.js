@@ -30,13 +30,18 @@ const commands = {
     NO_COMMAND: 0xFF
 };
 
-// https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol
+function commandToKey(command) {
+    // value to key
+    return Object.keys(commands).find((key) => commands[key] === command);
+}
 
+// FIXME: SlipUtils
+// https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol
 const SLIP = {
-    frameEnd: "\xc0",
-    frameEscape: "\xdb",
-    transposedFrameEnd: "\xdc",
-    transposedFrameEscape: "\xdd"
+    frameEnd: 0xC0,
+    frameEscape: 0xDB,
+    transposedFrameEnd: 0xDC,
+    transposedFrameEscape: 0xDD
 }
 
 const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
@@ -80,53 +85,83 @@ class EspBoard {
                 debug("RTS off, DTR on", error, result);
             });
         }).then(() => {
-            return delay(50);
+            return delay(5);
         }).then(() => {
             this.port.set({dtr: false}, (error, result) => {
                 debug("DTR off", error, result);
+                this.port.resume();
             });
         });
     }
 }
 
 
-class EspComm extends EventEmitter {
+class EspComm {
     constructor(config) {
-        super();
+        this.emitter = new EventEmitter();
         if (config.debug) {
             debug = config.debug;
         }
-        this.port = this.initializePort(config);
+        this.port = new SerialPort(config.portName, {
+            baudRate: config.baudRate,
+            parity: 'none',
+            stopBits: 1,
+            xon: false,
+            xoff: false,
+            rtscts: false,
+            dsrdtr: false
+        }, false);
+        this.bindPort();
         var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
         this.board = new BoardFactory(this.port);
         this.isOpen = false;
         this.config = config;
     }
     
-    initializePort(config) {
-        var port = new SerialPort(config.portName, {
-            baudRate: config.baudRate
-        }, false);
-        port.on('error', (error) => debug("PORT ERROR", error));
-        port.on('data', (buffer) => {
+    bindPort() {
+        this.port.on('error', (error) => debug("PORT ERROR", error));
+        this.port.on('data', (buffer) => {
             debug("Data received", buffer.length, buffer);
+            // FIXME:csd - SlipUtils.findSlipMessages
             let slipStart = buffer.indexOf(SLIP.frameEnd);
             while (slipStart >= 0) {
                 debug("Suspected SLIP response", slipStart);
                 let slipEnd = buffer.indexOf(SLIP.frameEnd, slipStart + 1);
                 if (slipEnd > slipStart) {
+                    debug("Suspicion confirmed");
                     let slipped = buffer.slice(slipStart, slipEnd);
-                    this.emit("responseReceived", slipped);
+                    this.emitter.emit("responseReceived", slipped);
                     slipStart = buffer.indexOf(SLIP.frameEnd, slipEnd + 1);
                 } else {
                     slipStart = -1;
                 }   
             }
         });
-        this.on("responseReceived", (slipped) => {
-            debug("SLIP found", slipped.length, slipped); 
+        this.emitter.on("responseReceived", (slipped) => {
+            // Will report a little longer due to escaping
+            // FIXME:csd - SlipUtils.decode
+            let response = new Buffer(slipped.length);
+            let responseLength = 0;
+            for (let index = 0; index < slipped.length; index++) {
+                let val = slipped[index];
+                if (val === SLIP.frameEscape) {
+                    // Move one past the escape char
+                    index++;
+                    if (slipped[index] === SLIP.transposedFrameEnd) {
+                        val = SLIP.frameEnd;    
+                    } else if (slipped[index] === SLIP.transposedFrameEscape) {
+                        val = SLIP.frameEscape;
+                    }
+                }
+                response[responseLength++] = val;
+            }
+            var header = bufferpack.unpack(formats.bootloader_packet_header, response.slice(0, 8));
+            // TODO:csd Verify checksum and direction
+            let commandName = commandToKey(header.command);
+            let body = response.slice(8, header.length + 8);
+            debug("Emitting", commandName, body);
+            this.emitter.emit(commandName, body);    
         });
-        return port;
     }
 
     open() {
@@ -163,14 +198,24 @@ class EspComm extends EventEmitter {
         debug("Syncing");
         // FIXME:csd - How to send break?
         // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
-        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME);
+        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME).then((response) => {
+            debug("Sync response completed!", response);
+        });
     }
     
     connect() {
+        return new Promise((resolve, reject) => {
+            this._connectAttempt()
+                .then(() => resolve());
+               
+        });
+    }
+    
+    _connectAttempt() {
+        // Python does a 5x loop here
         return this.board.resetIntoBootLoader()
             .then(() => {
-                return delay(100)
-            }).then(() => {
+                // And a 5x loop here
                 return new Promise((resolve, reject) => {
                     this.port.flush((error) => {
                         if (error) {
@@ -180,30 +225,31 @@ class EspComm extends EventEmitter {
                         resolve();
                     });
                 });
-            }).then(() => {
-                this.sync();
-            });
+            }).then(() => this.sync());
     }
     
     /**
+     * FIXME:csd SlipUtils.encode
      * Writes a SLIP packet to the port
      */
     write(packet) {
         // Probably larger than this due to escaping
-        var slipped = new Buffer(packet.length + 2);
-        slipped.write(SLIP.frameEnd);
+        let slipped = new Buffer(packet.length + 2 + 100);
+        let slippedIndex = 0;
+        slipped[slippedIndex++] = SLIP.frameEnd;
         for (var i = 0; i < packet.length; i++) {
             if (packet[i] === SLIP.frameEnd) {
-                slipped.write(SLIP.frameEscape);
-                slipped.write(SLIP.transposedFrameEnd);
+                slipped[slippedIndex++] = SLIP.frameEscape;
+                slipped[slippedIndex++] = SLIP.transposedFrameEnd;
             } else if (packet[i] === SLIP.frameEscape) {
-                slipped.write(SLIP.frameEscape);
-                slipped.write(SLIP.transposedFrameEscape);
+                slipped[slippedIndex++] = SLIP.frameEscape;
+                slipped[slippedIndex++] = SLIP.transposedFrameEscape;
             } else {
-                slipped.write(packet[i]);
+                slipped[slippedIndex++] = packet[i];
             }
         }
-        slipped.write(SLIP.frameEnd);
+        slipped[slippedIndex++] = SLIP.frameEnd;
+        slipped = slipped.slice(0, slippedIndex);
         this.port.write(slipped, (err, result) => {
             debug("Wrote", slipped.length, slipped, result);
         });
@@ -222,15 +268,24 @@ class EspComm extends EventEmitter {
                     checksum = this.calculateChecksum(data);
                 }
                 var sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
-                this.write(sendHeader + data);
+                this.write(Buffer.concat([sendHeader, data], sendHeader.length + data.length));
             }
             
             delay(5).then(() => {
                 this.port.drain((err, res) => {
                     debug("Draining", err, res);
-                    resolve();  
                 });
             });
+            let commandName = commandToKey(command);
+            if (this.emitter.listeners(commandName).length === 0) {
+                debug("Listening once", commandName);
+                this.emitter.once(commandName, (response) => {
+                    resolve(response);    
+                });    
+            } else {
+                debug("Someone is already awaiting", commandName);
+            }
+            
         });
     }
 }
