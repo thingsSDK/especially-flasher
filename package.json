@@ -26,7 +26,7 @@
   "dependencies": {
     "bufferpack": "0.0.6",
     "node-binary": "^1.1.0",
-    "serialport": "^2.0.6",
+    "serialport": "^2.0.7-beta1",
     "slip": "^1.0.2"
   },
   "devDependencies": {

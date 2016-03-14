@@ -50,15 +50,8 @@ var debug = function() {};
 
 function delay(time) {
     return new Promise((resolve) => {
-        debug("Sleepy time", time);
+        debug("Delaying for", time);
         setTimeout(resolve, time);
-    });
-}
-
-function dumbPromise() {
-    return new Promise((resolve, reject) => {
-        console.log("Hello!");
-        resolve("Shoe!"); 
     });
 }
 
@@ -70,42 +63,35 @@ function repeatPromise(times, callback) {
     return chain;
 }
 
+
 class EspBoard {
     constructor(port) {
         this.port = port;
+    }
+    
+    portSet(options) {
+        return new Promise((resolve, reject) => {
+            debug("Setting port", options);
+            this.port.set(options, (err, result) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(result); 
+            });
+        });     
     }
 
     resetIntoBootLoader() {
         // RTS - Request To Send
         // DTR - Data Terminal Ready
         debug("Resetting board");
-        return new Promise((resolve, reject) => {
-            this.port.set({
-                rts: true,
-                dtr: false
-            }, (error, result) => {
-                debug("RTS on, DTR off", error, result);
-                if (error) {
-                    reject(error);
-                }
-                resolve(result);
-            });
-        }).then(() => {
-            return delay(5);
-        }).then(() => {
-            this.port.set({
-                dtr: true,
-                rts: false
-            }, (error, result) => {
-                debug("RTS off, DTR on", error, result);
-            });
-        }).then(() => {
-            return delay(50);
-        }).then(() => {
-            this.port.set({dtr: false}, (error, result) => {
-                debug("DTR off", error, result);
-            });
-        });
+        return this.portSet({rts: true})
+            .then(() => this.portSet({dtr: false}))
+            .then(() => delay(5))
+            .then(() => this.portSet({rts: false}))
+            .then(() => this.portSet({dtr: true}))
+            .then(() => delay(50))
+            //.then(() => this.portSet({dtr: false})); 
     }
 }
 
@@ -142,7 +128,7 @@ class EspComm {
                 debug("Suspected SLIP response", slipStart);
                 let slipEnd = buffer.indexOf(SLIP.frameEnd, slipStart + 1);
                 if (slipEnd > slipStart) {
-                    debug("Suspicion confirmed");
+                    debug("Suspicion confirmed", slipStart, slipEnd);
                     let slipped = buffer.slice(slipStart, slipEnd);
                     this.emitter.emit("responseReceived", slipped);
                     slipStart = buffer.indexOf(SLIP.frameEnd, slipEnd + 1);
@@ -169,10 +155,14 @@ class EspComm {
                 }
                 response[responseLength++] = val;
             }
-            var header = bufferpack.unpack(formats.bootloader_packet_header, response.slice(0, 8));
+            let headerBytes = response.slice(0, 8);
+            let header = bufferpack.unpack(formats.bootloader_packet_header, headerBytes);
+            debug("Header is", header);
+            debugger;
             // TODO:csd Verify checksum and direction
             let commandName = commandToKey(header.command);
-            let body = response.slice(8, header.length + 8);
+            let body = response.slice(8, header.size + 8);
+            
             debug("Emitting", commandName, body);
             this.emitter.emit(commandName, body);    
         });
@@ -213,8 +203,10 @@ class EspComm {
         // FIXME:csd - How to send break?
         // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
         return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse).then((response) => {
-            debug("Sync response completed!", response);
-        });
+                debug("Sync response completed!", response);    
+            }).then(() => repeatPromise(7, () => { 
+                return this.sendCommand(commands.NO_COMMAND, null, true)
+            }));
     }
     
     connect() {
@@ -300,7 +292,7 @@ class EspComm {
                 if (this.emitter.listeners(commandName).length === 0) {
                     debug("Listening once", commandName);
                     this.emitter.once(commandName, (response) => {
-                        resolve(response);    
+                        resolve(response);
                     });    
                 } else {
                     debug("Someone is already awaiting", commandName);
