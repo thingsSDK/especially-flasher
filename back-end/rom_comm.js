@@ -3,6 +3,7 @@
 const SerialPort = require("serialport").SerialPort;
 const bufferpack = require("bufferpack");
 const EventEmitter = require("events");
+const slip = require("./streams/slip");
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
 //   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
@@ -10,6 +11,7 @@ const EventEmitter = require("events");
 //   0x3FC000 esp_init_data_default.bin 0x3FE000 blank.bin
 
 // Marriage of ESPTOOL-CK and ESPTOOL.py
+const BOOTLOADER_HEADER_SIZE = 8;
 const formats = {
     bootloader_packet_header: "<B(direction)B(command)H(size)I(checksum)"
 };
@@ -36,15 +38,14 @@ function commandToKey(command) {
 }
 
 // FIXME: SlipUtils
-// https://en.wikipedia.org/wiki/Serial_Line_Internet_Protocol
-const SLIP = {
-    frameEnd: 0xC0,
-    frameEscape: 0xDB,
-    transposedFrameEnd: 0xDC,
-    transposedFrameEscape: 0xDD
-}
 
-const SYNC_FRAME = new Buffer("\x07\x07\x12\x20" + "\x55".repeat(32));
+
+
+const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
+                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
+                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]);
 
 var debug = function() {};
 
@@ -96,13 +97,13 @@ class EspBoard {
 }
 
 
-class EspComm {
+class RomComm {
     constructor(config) {
         this.emitter = new EventEmitter();
         if (config.debug) {
             debug = config.debug;
         }
-        this.port = new SerialPort(config.portName, {
+        this._port = new SerialPort(config.portName, {
             baudRate: config.baudRate,
             parity: 'none',
             stopBits: 1,
@@ -113,56 +114,30 @@ class EspComm {
         }, false);
         this.bindPort();
         var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
-        this.board = new BoardFactory(this.port);
+        this.board = new BoardFactory(this._port);
         this.isOpen = false;
         this.config = config;
     }
     
     bindPort() {
-        this.port.on('error', (error) => debug("PORT ERROR", error));
-        this.port.on('data', (buffer) => {
-            debug("Data received", buffer.length, buffer);
-            // FIXME:csd - SlipUtils.findSlipMessages
-            let slipStart = buffer.indexOf(SLIP.frameEnd);
-            while (slipStart >= 0) {
-                debug("Suspected SLIP response", slipStart);
-                let slipEnd = buffer.indexOf(SLIP.frameEnd, slipStart + 1);
-                if (slipEnd > slipStart) {
-                    debug("Suspicion confirmed", slipStart, slipEnd);
-                    let slipped = buffer.slice(slipStart, slipEnd);
-                    this.emitter.emit("responseReceived", slipped);
-                    slipStart = buffer.indexOf(SLIP.frameEnd, slipEnd + 1);
-                } else {
-                    slipStart = -1;
-                }   
+        this._port.on('error', (error) => debug("PORT ERROR", error));
+        this.in = new slip.SlipDecoder({debug: debug});
+        this.out = new slip.SlipEncoder({debug: debug});
+        this._port.pipe(this.in);
+        this.out.pipe(this._port);
+        this.in.on("data", (data) => {
+            let headerBytes = data.slice(0, 8);
+            if (headerBytes[0] != 0x01) {
+                debug("INVALID RESPONSE...try again");
+                debugger;
+                return;
             }
-        });
-        this.emitter.on("responseReceived", (slipped) => {
-            // Will report a little longer due to escaping
-            // FIXME:csd - SlipUtils.decode
-            let response = new Buffer(slipped.length);
-            let responseLength = 0;
-            for (let index = 0; index < slipped.length; index++) {
-                let val = slipped[index];
-                if (val === SLIP.frameEscape) {
-                    // Move one past the escape char
-                    index++;
-                    if (slipped[index] === SLIP.transposedFrameEnd) {
-                        val = SLIP.frameEnd;    
-                    } else if (slipped[index] === SLIP.transposedFrameEscape) {
-                        val = SLIP.frameEscape;
-                    }
-                }
-                response[responseLength++] = val;
-            }
-            let headerBytes = response.slice(0, 8);
             let header = bufferpack.unpack(formats.bootloader_packet_header, headerBytes);
             debug("Header is", header);
             debugger;
             // TODO:csd Verify checksum and direction
             let commandName = commandToKey(header.command);
-            let body = response.slice(8, header.size + 8);
-            
+            let body = this.in.read(size);
             debug("Emitting", commandName, body);
             this.emitter.emit(commandName, body);    
         });
@@ -170,8 +145,8 @@ class EspComm {
 
     open() {
         return new Promise((resolve, reject) => {
-            this.port.open((error) => {
-                debug("Opening port...", this.port);
+            this._port.open((error) => {
+                debug("Opening port...", this._port);
                 if (error) {
                     reject(error);
                 } else {
@@ -182,9 +157,14 @@ class EspComm {
             return this.connect();
         });
     }
+    
+    connectStreamVersion() {
+        return this.board.resetIntoBootLoader()
+            .then(() => this.sync());
+    }
 
     close() {
-        this.port.close();
+        this._port.close();
         this.isOpen = false;
     }
 
@@ -200,9 +180,8 @@ class EspComm {
 
     sync(ignoreResponse) {
         debug("Syncing");
-        // FIXME:csd - How to send break?
-        // https://github.com/igrr/esptool-ck/blob/master/serialport/serialport.c#L234
-        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse).then((response) => {
+        return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse)
+            .then((response) => {
                 debug("Sync response completed!", response);    
             }).then(() => repeatPromise(7, () => { 
                 return this.sendCommand(commands.NO_COMMAND, null, true)
@@ -225,7 +204,7 @@ class EspComm {
     
     _flushAndSync() {
         return new Promise((resolve, reject) => {
-                    this.port.flush((error) => {
+                    this._port.flush((error) => {
                         if (error) {
                             reject(error);
                         }
@@ -236,51 +215,29 @@ class EspComm {
             }).then(() => this.sync(true));
     }
     
-    /**
-     * FIXME:csd SlipUtils.encode
-     * Writes a SLIP packet to the port
-     */
-    write(packet) {
-        // Probably larger than this due to escaping
-        let slipped = new Buffer(packet.length + 2 + 100);
-        let slippedIndex = 0;
-        slipped[slippedIndex++] = SLIP.frameEnd;
-        for (var i = 0; i < packet.length; i++) {
-            if (packet[i] === SLIP.frameEnd) {
-                slipped[slippedIndex++] = SLIP.frameEscape;
-                slipped[slippedIndex++] = SLIP.transposedFrameEnd;
-            } else if (packet[i] === SLIP.frameEscape) {
-                slipped[slippedIndex++] = SLIP.frameEscape;
-                slipped[slippedIndex++] = SLIP.transposedFrameEscape;
-            } else {
-                slipped[slippedIndex++] = packet[i];
-            }
-        }
-        slipped[slippedIndex++] = SLIP.frameEnd;
-        slipped = slipped.slice(0, slippedIndex);
-        this.port.write(slipped, (err, result) => {
-            debug("Wrote", slipped.length, slipped, result);
-        });
+    headerPacketFor(command, data) {
+        // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
+        let buf = new ArrayBuffer(8);
+        let dv = new DataView(buf);
+        dv.setUint8(0, 0x00, true);
+        dv.setUint8(1, command, true);
+        dv.setUint16(2, data.byteLength, true);
+        dv.setUint32(4, this.calculateChecksum(data), true);
+        return new Buffer(buf);
     }
 
-    // TODO:csd - How to make the commands pretty?
     // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
     // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
     sendCommand(command, data, ignoreResponse) {
         return new Promise((resolve, reject) => {
-            var length = 0;
-            var checksum = 0;
             if (command != commands.NO_COMMAND) {
-                if (data) {
-                    length = data.length;
-                    checksum = this.calculateChecksum(data);
-                }
-                let sendHeader = bufferpack.pack(formats.bootloader_packet_header, [0x00, command, length, checksum]);
-                this.write(Buffer.concat([sendHeader, data], sendHeader.length + data.length));
+                let sendHeader = this.headerPacketFor(command, data);
+                let message = Buffer.concat([sendHeader, data], sendHeader.length + data.length);
+                this.out.write(message);
             }
             
             delay(5).then(() => {
-                this.port.drain((err, res) => {
+                this._port.drain((err, res) => {
                     debug("Draining", err, res);
                     if (ignoreResponse) {
                         resolve("Response was ignored");
@@ -304,5 +261,5 @@ class EspComm {
 
 
 
-module.exports = EspComm;
+module.exports = RomComm;
 
