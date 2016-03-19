@@ -58,7 +58,7 @@ function delay(time) {
 function repeatPromise(times, callback) {
     let chain = Promise.resolve();
     for (let i = 0; i < times; i++) {
-        chain = chain.then(() => callback());    
+        chain = chain.then(() => callback());
     }
     return chain;
 }
@@ -68,7 +68,7 @@ class EspBoard {
     constructor(port) {
         this.port = port;
     }
-    
+
     portSet(options) {
         return new Promise((resolve, reject) => {
             debug("Setting port", options);
@@ -76,9 +76,9 @@ class EspBoard {
                 if (err) {
                     reject(err);
                 }
-                resolve(result); 
+                resolve(result);
             });
-        });     
+        });
     }
 
     resetIntoBootLoader() {
@@ -89,7 +89,7 @@ class EspBoard {
             .then(() => delay(5))
             .then(() => this.portSet({rts: false, dtr: true}))
             .then(() => delay(50))
-            .then(() => this.portSet({rts: false, dtr: false})); 
+            .then(() => this.portSet({rts: false, dtr: false}));
     }
 }
 
@@ -115,7 +115,7 @@ class RomComm {
         this.config = config;
         this.isInBootLoader = false;
     }
-    
+
     bindPort() {
         this._port.on('error', (error) => debug("PORT ERROR", error));
         this.in = new slip.SlipDecoder({debug: debug});
@@ -135,9 +135,9 @@ class RomComm {
             }
             let commandName = commandToKey(header.command);
             let body = data.slice(8, header.size);
-            
+
             debug("Emitting", commandName, body);
-            this.in.emit(commandName, body);    
+            this.in.emit(commandName, body);
         });
     }
 
@@ -153,7 +153,7 @@ class RomComm {
             });
         }).then(() => this.connect());
     }
-    
+
     connectStreamVersion() {
         return this.board.resetIntoBootLoader()
             .then(() => this.sync());
@@ -180,24 +180,24 @@ class RomComm {
             .then((response) => {
                 if (!ignoreResponse) {
                     debug("Sync response completed!", response);
-                    this.isInBootLoader = true;    
-                }   
+                    this.isInBootLoader = true;
+                }
             });
     }
-    
+
     connect() {
         return repeatPromise(5, () => this._connectAttempt())
             .then(() => this.sync())
             .then(() => this.isInBootLoader);
     }
-    
+
     _connectAttempt() {
         return this.board.resetIntoBootLoader()
                 .then(() => delay(100))
                 // And a 5x loop here
                 .then(() => repeatPromise(5, () => this._flushAndSync()));
     }
-    
+
     _flushAndSync() {
         return new Promise((resolve, reject) => {
                     this._port.flush((error) => {
@@ -205,12 +205,12 @@ class RomComm {
                             reject(error);
                         }
                         debug("Port flushed");
-                        
+
                         resolve();
                     });
             }).then(() => this.sync(true));
     }
-    
+
     headerPacketFor(command, data) {
         // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
         let buf = new ArrayBuffer(8);
@@ -221,7 +221,7 @@ class RomComm {
         dv.setUint32(4, this.calculateChecksum(data), true);
         return new Buffer(buf);
     }
-    
+
     headerPacketFrom(buffer) {
         let header = {};
         header.direction = buffer.readUInt8(0);
@@ -246,7 +246,7 @@ class RomComm {
                                 resolve("Response was ignored");
                             }
                         });
-                    });       
+                    });
                });
             }
             if (!ignoreResponse) {
@@ -255,10 +255,10 @@ class RomComm {
                     debug("Listening once", commandName);
                     this.in.once(commandName, (response) => {
                         resolve(response);
-                    });    
+                    });
                 } else {
                     debug("Someone is already awaiting", commandName);
-                }    
+                }
             }
         });
     }
