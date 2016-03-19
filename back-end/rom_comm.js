@@ -1,19 +1,12 @@
 "use strict";
 
 const SerialPort = require("serialport").SerialPort;
-const bufferpack = require("bufferpack");
 const slip = require("./streams/slip");
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
 //   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
 //   0x0000 "boot_v1.4(b1).bin" 0x1000 espruino_esp8266_user1.bin \
 //   0x3FC000 esp_init_data_default.bin 0x3FE000 blank.bin
-
-// Marriage of ESPTOOL-CK and ESPTOOL.py
-const BOOTLOADER_HEADER_SIZE = 8;
-const formats = {
-    bootloader_packet_header: "<B(direction)B(command)H(size)I(checksum)"
-};
 
 const commands = {
     CMD0: 0x00,
@@ -35,10 +28,6 @@ function commandToKey(command) {
     // value to key
     return Object.keys(commands).find((key) => commands[key] === command);
 }
-
-// FIXME: SlipUtils
-
-
 
 const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
