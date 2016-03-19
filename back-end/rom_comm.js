@@ -2,7 +2,6 @@
 
 const SerialPort = require("serialport").SerialPort;
 const bufferpack = require("bufferpack");
-const EventEmitter = require("events");
 const slip = require("./streams/slip");
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
@@ -86,20 +85,17 @@ class EspBoard {
         // RTS - Request To Send
         // DTR - Data Terminal Ready
         debug("Resetting board");
-        return this.portSet({rts: true})
-            .then(() => this.portSet({dtr: false}))
+        return this.portSet({rts: true, dtr:false})
             .then(() => delay(5))
-            .then(() => this.portSet({rts: false}))
-            .then(() => this.portSet({dtr: true}))
+            .then(() => this.portSet({rts: false, dtr: true}))
             .then(() => delay(50))
-            //.then(() => this.portSet({dtr: false})); 
+            .then(() => this.portSet({rts: false, dtr: false})); 
     }
 }
 
 
 class RomComm {
     constructor(config) {
-        this.emitter = new EventEmitter();
         if (config.debug) {
             debug = config.debug;
         }
@@ -117,6 +113,7 @@ class RomComm {
         this.board = new BoardFactory(this._port);
         this.isOpen = false;
         this.config = config;
+        this.isInBootLoader = false;
     }
     
     bindPort() {
@@ -126,20 +123,21 @@ class RomComm {
         this._port.pipe(this.in);
         this.out.pipe(this._port);
         this.in.on("data", (data) => {
-            let headerBytes = data.slice(0, 8);
-            if (headerBytes[0] != 0x01) {
-                debug("INVALID RESPONSE...try again");
-                debugger;
+            if (data.length < 8) {
+                debug("Missing header");
                 return;
             }
-            let header = bufferpack.unpack(formats.bootloader_packet_header, headerBytes);
-            debug("Header is", header);
-            debugger;
-            // TODO:csd Verify checksum and direction
+            let headerBytes = data.slice(0, 8);
+            let header = this.headerPacketFrom(headerBytes);
+            if (header.direction != 0x01) {
+                debug("Invaid direction", header.direction);
+                return;
+            }
             let commandName = commandToKey(header.command);
-            let body = this.in.read(size);
+            let body = data.slice(8, header.size);
+            
             debug("Emitting", commandName, body);
-            this.emitter.emit(commandName, body);    
+            this.in.emit(commandName, body);    
         });
     }
 
@@ -153,9 +151,7 @@ class RomComm {
                     resolve();
                 }
             });
-        }).then(() => {
-            return this.connect();
-        });
+        }).then(() => this.connect());
     }
     
     connectStreamVersion() {
@@ -182,24 +178,24 @@ class RomComm {
         debug("Syncing");
         return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse)
             .then((response) => {
-                debug("Sync response completed!", response);    
-            }).then(() => repeatPromise(7, () => { 
-                return this.sendCommand(commands.NO_COMMAND, null, true)
-            }));
+                if (!ignoreResponse) {
+                    debug("Sync response completed!", response);
+                    this.isInBootLoader = true;    
+                }   
+            });
     }
     
     connect() {
         return repeatPromise(5, () => this._connectAttempt())
-            .then(() => this.sync());
+            .then(() => this.sync())
+            .then(() => this.isInBootLoader);
     }
     
     _connectAttempt() {
         return this.board.resetIntoBootLoader()
                 .then(() => delay(100))
                 // And a 5x loop here
-                .then(() => {
-                    return repeatPromise(5, () => this._flushAndSync())
-                });
+                .then(() => repeatPromise(5, () => this._flushAndSync()));
     }
     
     _flushAndSync() {
@@ -219,11 +215,20 @@ class RomComm {
         // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
         let buf = new ArrayBuffer(8);
         let dv = new DataView(buf);
-        dv.setUint8(0, 0x00, true);
-        dv.setUint8(1, command, true);
+        dv.setUint8(0, 0x00);
+        dv.setUint8(1, command);
         dv.setUint16(2, data.byteLength, true);
         dv.setUint32(4, this.calculateChecksum(data), true);
         return new Buffer(buf);
+    }
+    
+    headerPacketFrom(buffer) {
+        let header = {};
+        header.direction = buffer.readUInt8(0);
+        header.command = buffer.readUInt8(1);
+        header.size = buffer.readUInt16LE(2);
+        header.checksum = buffer.readUInt32LE(4);
+        return header;
     }
 
     // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
@@ -233,22 +238,22 @@ class RomComm {
             if (command != commands.NO_COMMAND) {
                 let sendHeader = this.headerPacketFor(command, data);
                 let message = Buffer.concat([sendHeader, data], sendHeader.length + data.length);
-                this.out.write(message);
+                this.out.write(message, 'buffer', (err, res) => {
+                    delay(5).then(() => {
+                        this._port.drain((drainErr, results) => {
+                            debug("Draining", drainErr, results);
+                            if (ignoreResponse) {
+                                resolve("Response was ignored");
+                            }
+                        });
+                    });       
+               });
             }
-            
-            delay(5).then(() => {
-                this._port.drain((err, res) => {
-                    debug("Draining", err, res);
-                    if (ignoreResponse) {
-                        resolve("Response was ignored");
-                    }
-                });
-            });
             if (!ignoreResponse) {
                 let commandName = commandToKey(command);
-                if (this.emitter.listeners(commandName).length === 0) {
+                if (this.in.listeners(commandName).length === 0) {
                     debug("Listening once", commandName);
-                    this.emitter.once(commandName, (response) => {
+                    this.in.once(commandName, (response) => {
                         resolve(response);
                     });    
                 } else {

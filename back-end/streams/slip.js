@@ -33,7 +33,7 @@ class SlipDecoder extends Transform {
     // TODO:csd - Write flush
     
     _transform(chunk, encoding, done) {
-        debug("SlipDecoder._transform", encoding);
+        debug("SlipDecoder._transform", encoding, chunk.length);
         for (let index = 0; index < chunk.length; index++) {
             let val = chunk[index];
             if (val === CODES.frameEnd) {
@@ -46,7 +46,6 @@ class SlipDecoder extends Transform {
                     this.resetDecoded();
                 } else {
                     this._slipping = true;
-                    debugger;
                 }
                 continue;
             }
