@@ -24,14 +24,14 @@ class SlipDecoder extends Transform {
         this._slipping = false;
         this.resetDecoded();
     }
-    
+
     resetDecoded() {
         this.decodedIndex = 0;
         this.decoded = new Buffer(256);
     }
-    
+
     // TODO:csd - Write flush
-    
+
     _transform(chunk, encoding, done) {
         debug("SlipDecoder._transform", encoding, chunk.length);
         for (let index = 0; index < chunk.length; index++) {
@@ -55,7 +55,7 @@ class SlipDecoder extends Transform {
                     // Move one past the escape char
                     index++;
                     if (chunk[index] === CODES.transposedFrameEnd) {
-                        val = CODES.frameEnd;    
+                        val = CODES.frameEnd;
                     } else if (chunk[index] === CODES.transposedFrameEscape) {
                         val = CODES.frameEscape;
                     }
@@ -68,7 +68,7 @@ class SlipDecoder extends Transform {
 }
 
 class SlipEncoder extends Transform {
-    
+
     _transform(chunk, encoding, done) {
         debug("SlipEncoder._transform", encoding);
         let encoded = new Buffer(chunk.length + 100);
@@ -95,4 +95,4 @@ class SlipEncoder extends Transform {
 module.exports = {
     SlipDecoder: SlipDecoder,
     SlipEncoder: SlipEncoder
-}
+};
