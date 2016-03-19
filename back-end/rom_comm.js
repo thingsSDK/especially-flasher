@@ -100,7 +100,6 @@ class RomComm {
         this.bindPort();
         var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
         this.board = new BoardFactory(this._port);
-        this.isOpen = false;
         this.config = config;
         this.isInBootLoader = false;
     }
@@ -143,14 +142,9 @@ class RomComm {
         }).then(() => this.connect());
     }
 
-    connectStreamVersion() {
-        return this.board.resetIntoBootLoader()
-            .then(() => this.sync());
-    }
-
     close() {
+        // TODO: Remove from boot loader
         this._port.close();
-        this.isOpen = false;
     }
 
     calculateChecksum(data) {
