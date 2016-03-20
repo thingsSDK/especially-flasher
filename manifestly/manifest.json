@@ -1,0 +1,51 @@
+{
+  "name": "Espruino 1v85",
+  "board": "ESP8266 ESP-12",
+  "description": "Official Binaries for the Espruino Runtime for the ESP8266 MCU ESP-12",
+  "download": "http://www.espruino.com/files/espruino_1v85.zip",
+  "recipes": [
+    {
+      "unzip": {
+        "source": "espruino_1v85.zip",
+        "files": ["espruino_1v85_esp8266.tgz"]
+      }
+    },
+    {
+      "untar": {
+        "source" :"espruino_1v85_esp8266.tgz",
+        "files": [
+          "boot_v1.4(b1).bin",
+          "espruino_esp8266_user1.bin",
+          "esp_init_data_default.bin",
+          "blank.bin"
+        ]
+      }
+    },
+    {
+      "flash": {
+        "baud": 115200,
+        "frequency": "80m",
+        "mode": "qio",
+        "size": "32m",
+        "files": [
+        {
+          "address": "0x0000",
+          "binary": "boot_v1.4(b1).bin"
+        },
+        {
+          "address": "0x1000",
+          "binary": "espruino_esp8266_user1.bin"
+        },
+        {
+          "address": "0x3FC000",
+          "binary": "esp_init_data_default.bin"
+        },
+        {
+          "address": "0x3FE000",
+          "binary": "blank.bin"
+        }
+        ]
+      }
+    }
+  ]
+}

@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
   "dependencies": {
+    "node-fetch": "^1.4.0",
     "serialport": "^2.0.6"
   },
   "devDependencies": {
