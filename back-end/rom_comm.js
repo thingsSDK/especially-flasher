@@ -1,7 +1,9 @@
 "use strict";
 
+const fs = require("fs");
 const SerialPort = require("serialport").SerialPort;
 const slip = require("./streams/slip");
+
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
 //   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
@@ -34,6 +36,9 @@ const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]);
+
+const FLASH_BLOCK_SIZE = 0x400;
+const SUCCESS = [0x01, 0x01];
 
 var debug = function() {};
 
@@ -214,6 +219,91 @@ class RomComm {
         return header;
     }
 
+    determineNumBlocks(blockSize, length) {
+        return Math.round((length + blockSize - 1) / blockSize);
+    }
+
+    prepareFlashAddress(address, size) {
+        let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, size);
+        let sectorsPerBlock = 16;
+        let sectorSize = 4096;
+        let numSectors = (size + sectorSize -1) / sectorSize;
+        let startSector = address / sectorSize;
+        // Leave some room for header space
+        let headSectors = sectorsPerBlock - (startSector % sectorsPerBlock);
+        if (numSectors < headSectors) {
+            headSectors = numSectors;
+        }
+        let eraseSize = (numSectors - headSectors) * sectorSize;
+        // TODO:csd - Research this...
+        /* SPIEraseArea function in the esp8266 ROM has a bug which causes extra area to be erased.
+            If the address range to be erased crosses the block boundary,
+            then extra head_sector_count sectors are erased.
+            If the address range doesn't cross the block boundary,
+            then extra total_sector_count sectors are erased.
+        */
+        if (numSectors < (2 * headSectors)) {
+            eraseSize = (numSectors + 1) / (2 * sectorSize);
+        }
+        var buffer = new ArrayBuffer(16);
+        var dv = new DataView(buffer);
+        dv.setUint32(0, eraseSize, true);
+        dv.setUint32(4, numBlocks, true);
+        dv.setUint32(8, FLASH_BLOCK_SIZE, true);
+        dv.setUint32(12, address, true);
+        return this.sendCommand(commands.FLASH_DOWNLOAD_BEGIN, new Buffer(buffer))
+            .then((result) => {
+                if (result.slice(0, 1) == SUCCESS) {
+                    return true;
+                } else {
+                    throw Error("Received unknown response: " + result);
+                }
+            });
+    }
+
+    flashAddressFromFile(address, fileName) {
+        return new Promise((resolve, reject) => {
+            fs.readFile(fileName, (err, data) => {
+               if (err) {
+                   reject(err);
+               }
+               return this.flashAddress(address, data)
+                    .then((result) => resolve(result));
+            });
+        });
+    }
+
+    flashAddress(address, data) {
+        return new Promise((resolve, reject) => {
+            this.prepareFlashAddress(address, data.length)
+                .then(() => {
+                    let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, data.length);
+                    for (let seq = 0; seq < numBlocks; seq++) {
+                        let startIndex = seq * FLASH_BLOCK_SIZE;
+                        let endIndex = Math.min((seq + 1) * FLASH_BLOCK_SIZE, FLASH_BLOCK_SIZE);
+                        let block = data.slice(startIndex, endIndex);
+                        let padAmount = FLASH_BLOCK_SIZE - data.length;
+                        // Pad the remaining bits, should only happen on the last block
+                        if (padAmount > 0) {
+                            let padding = new Buffer(padAmount);
+                            padding.fill(0xFF);
+                            block = Buffer.concat(block, padding);
+                        }
+
+                        // TODO:csd - How are we going to flash in a tight loop like this asynchronously?
+                        var buffer = new ArrayBuffer(16);
+                        var dv = new DataView(buffer);
+                        dv.setUint32(0, block.length, true);
+                        dv.setUint32(4, seq, true);
+                        dv.setUint32(8, 0, true);  // Uhhh
+                        dv.setUint32(12, 0, true);  // Uhhh
+                        this.sendCommand(commands.FLASH_DOWNLOAD_DATA, Buffer.concat([buffer, block]));
+                    }
+                }).then((result) => resolve(result));
+        });
+    }
+
+
     // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
     // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
     sendCommand(command, data, ignoreResponse) {
@@ -250,4 +340,3 @@ class RomComm {
 
 
 module.exports = RomComm;
-
