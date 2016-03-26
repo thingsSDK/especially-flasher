@@ -280,16 +280,15 @@ class RomComm {
                     let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, data.length);
                     for (let seq = 0; seq < numBlocks; seq++) {
                         let startIndex = seq * FLASH_BLOCK_SIZE;
-                        let endIndex = Math.min((seq + 1) * FLASH_BLOCK_SIZE, FLASH_BLOCK_SIZE);
+                        let endIndex = Math.min((seq + 1) * FLASH_BLOCK_SIZE, data.length);
                         let block = data.slice(startIndex, endIndex);
-                        let padAmount = FLASH_BLOCK_SIZE - data.length;
-                        // Pad the remaining bits, should only happen on the last block
-                        if (padAmount > 0) {
+                        if (endIndex == data.length) {
+                            // Pad the remaining bits, should only happen on the last block
+                            let padAmount = FLASH_BLOCK_SIZE - data.length;
                             let padding = new Buffer(padAmount);
                             padding.fill(0xFF);
-                            block = Buffer.concat(block, padding);
+                            block = Buffer.concat([block, padding]);
                         }
-
                         // TODO:csd - How are we going to flash in a tight loop like this asynchronously?
                         var buffer = new ArrayBuffer(16);
                         var dv = new DataView(buffer);
