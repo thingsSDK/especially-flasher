@@ -1,6 +1,7 @@
 "use strict";
 
 const stream = require("stream");
+const log = require("../logger");
 const Transform = stream.Transform;
 const Readable = stream.Readable;
 
@@ -11,16 +12,12 @@ const CODES = {
     transposedFrameEnd: 0xDC,
     transposedFrameEscape: 0xDD
  };
- let debug = () => {};
 
 
 
 class SlipDecoder extends Transform {
     constructor(options) {
         super(options);
-        if (options.debug) {
-            debug = options.debug;
-        }
         this._slipping = false;
         this.resetDecoded();
     }
@@ -33,16 +30,16 @@ class SlipDecoder extends Transform {
     // TODO:csd - Write flush
 
     _transform(chunk, encoding, done) {
-        debug("SlipDecoder._transform", encoding, chunk.length);
+        log.info("SlipDecoder._transform", encoding, chunk.length);
         for (let index = 0; index < chunk.length; index++) {
             let val = chunk[index];
             if (val === CODES.frameEnd) {
-                debug("frameEnd detected");
+                log.debug("frameEnd detected");
                 if (this._slipping) {
                     this._slipping = false;
                     // Return all of decoded
                     this.push(this.decoded.slice(0, this.decodedIndex));
-                    debug("Resetting buffer");
+                    log.debug("Resetting buffer");
                     this.resetDecoded();
                 } else {
                     this._slipping = true;
@@ -70,7 +67,7 @@ class SlipDecoder extends Transform {
 class SlipEncoder extends Transform {
 
     _transform(chunk, encoding, done) {
-        debug("SlipEncoder._transform", encoding);
+        log.info("SlipEncoder._transform", encoding);
         let encoded = new Buffer(chunk.length + 100);
         let encodedIndex = 0;
         encoded[encodedIndex++] = CODES.frameEnd;
