@@ -12,8 +12,9 @@ function delay(time) {
 function repeatPromise(times, callback) {
     let chain = Promise.resolve();
     // Range just used for closure based loop
-    let range = new Array(times);
-    range.fill(0);
+    let range = new Array(times)
+        .fill(0)
+        .map((value, index) => index);
     range.forEach(() => {
         chain = chain.then(() => callback());
     });
