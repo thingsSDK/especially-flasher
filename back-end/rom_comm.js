@@ -6,6 +6,7 @@ const log = require("./logger");
 const slip = require("./streams/slip");
 const delay = require("./utilities").delay;
 const repeatPromise = require("./utilities").repeatPromise;
+const promiseChain = require("./utilities").promiseChain;
 
 
 // ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
@@ -41,11 +42,48 @@ const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55]);
 
 const FLASH_BLOCK_SIZE = 0x400;
-const SUCCESS = [0x01, 0x01];
+const SUCCESS = new Buffer([0x00, 0x00]);
 
-class EspBoard {
+const FLASH_MODES = {
+    qio: 0,
+    qout: 1,
+    dio: 2,
+    dout: 3
+};
+
+const FLASH_FREQUENCIES = {
+    "40m": 0,
+    "26m": 1,
+    "20m": 2,
+    "80m": 0xf
+};
+
+const FLASH_SIZES = {
+    "4m": 0x00,
+    "2m": 0x10,
+    "8m": 0x20,
+    "16m": 0x30,
+    "32m": 0x40,
+    "16m-c1": 0x50,
+    "32m-c1": 0x60,
+    "32m-c2": 0x70
+};
+
+class Esp12 {
+    // --flash_freq 80m --flash_mode qio --flash_size 32m
     constructor(port) {
         this.port = port;
+        this.flashFrequency = "80m";
+        this.flashMode = "qio";
+        this.flashSize = "32m";
+    }
+
+    flashInfoAsBytes() {
+        let buffer = new ArrayBuffer(2);
+        let dv = new DataView(buffer);
+        dv.setUint8(0, FLASH_MODES[this.flashMode]);
+        dv.setUint8(1, FLASH_SIZES[this.flashSize] + FLASH_FREQUENCIES[this.flashFrequency]);
+        return new Buffer(buffer);
     }
 
     portSet(options) {
@@ -85,7 +123,7 @@ class RomComm {
             dsrdtr: false
         }, false);
         this.bindPort();
-        var BoardFactory = config.BoardFactory ? config.BoardFactory : EspBoard;
+        var BoardFactory = config.BoardFactory ? config.BoardFactory : Esp12;
         this.board = new BoardFactory(this._port);
         this.config = config;
         this.isInBootLoader = false;
@@ -109,7 +147,7 @@ class RomComm {
                 return;
             }
             let commandName = commandToKey(header.command);
-            let body = data.slice(8, header.size);
+            let body = data.slice(8, 8 + header.size);
 
             log.info("Emitting", commandName, body);
             this.in.emit(commandName, body);
@@ -156,16 +194,29 @@ class RomComm {
     }
 
     connect() {
-        return repeatPromise(5, () => this._connectAttempt())
-            .then(() => this.sync())
-            .then(() => this.isInBootLoader);
+        return repeatPromise(5, () => {
+            if (this.isInBootLoader) {
+                log.info("In Bootloader not re-connecting");
+                return true;
+            } else {
+                return this._connectAttempt();
+            }
+        }).then(() => this.sync())
+        .then(() => this.isInBootLoader);
     }
 
     _connectAttempt() {
         return this.board.resetIntoBootLoader()
                 .then(() => delay(100))
                 // And a 5x loop here
-                .then(() => repeatPromise(5, () => this._flushAndSync()));
+                .then(() => repeatPromise(5, () => {
+                    if (this.isInBootLoader) {
+                        log.info("In Bootloader not syncing");
+                        return true;
+                    } else {
+                        return this._flushAndSync();
+                    }
+                }));
     }
 
     _flushAndSync() {
@@ -202,15 +253,16 @@ class RomComm {
     }
 
     determineNumBlocks(blockSize, length) {
-        return Math.round((length + blockSize - 1) / blockSize);
+        return Math.floor((length + blockSize - 1) / blockSize);
     }
 
     prepareFlashAddress(address, size) {
+        log.info("Preparing flash address", address, size);
         let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, size);
         let sectorsPerBlock = 16;
         let sectorSize = 4096;
-        let numSectors = (size + sectorSize -1) / sectorSize;
-        let startSector = address / sectorSize;
+        let numSectors = Math.floor((size + sectorSize - 1) / sectorSize);
+        let startSector = Math.floor(address / sectorSize);
         // Leave some room for header space
         let headSectors = sectorsPerBlock - (startSector % sectorsPerBlock);
         if (numSectors < headSectors) {
@@ -225,7 +277,7 @@ class RomComm {
             then extra total_sector_count sectors are erased.
         */
         if (numSectors < (2 * headSectors)) {
-            eraseSize = (numSectors + 1) / (2 * sectorSize);
+            eraseSize = ((numSectors + 1) / 2) * sectorSize;
         }
         var buffer = new ArrayBuffer(16);
         var dv = new DataView(buffer);
@@ -235,9 +287,11 @@ class RomComm {
         dv.setUint32(12, address, true);
         return this.sendCommand(commands.FLASH_DOWNLOAD_BEGIN, new Buffer(buffer))
             .then((result) => {
-                if (result.slice(0, 1) == SUCCESS) {
+                log.info("Flash download received back", result);
+                if (result.equals(SUCCESS)) {
                     return true;
                 } else {
+                    log.error("Invalid response", result);
                     throw Error("Received unknown response: " + result);
                 }
             });
@@ -260,26 +314,43 @@ class RomComm {
             this.prepareFlashAddress(address, data.length)
                 .then(() => {
                     let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, data.length);
+                    let requests = [];
                     for (let seq = 0; seq < numBlocks; seq++) {
                         let startIndex = seq * FLASH_BLOCK_SIZE;
                         let endIndex = Math.min((seq + 1) * FLASH_BLOCK_SIZE, data.length);
                         let block = data.slice(startIndex, endIndex);
-                        if (endIndex == data.length) {
-                            // Pad the remaining bits, should only happen on the last block
-                            let padAmount = FLASH_BLOCK_SIZE - data.length;
-                            let padding = new Buffer(padAmount);
-                            padding.fill(0xFF);
-                            block = Buffer.concat([block, padding]);
+                        // On the first block of the first sequence, override the flash info...
+                        if (address === 0 && seq === 0 && block[0] === 0xe9) {
+                            // ... which lives in the 3rd and 4th bytes
+                            let flashInfoBuffer = this.board.flashInfoAsBytes();
+                            block[2] = flashInfoBuffer[0];
+                            block[3] = flashInfoBuffer[1];
                         }
-                        // TODO:csd - How are we going to flash in a tight loop like this asynchronously?
+                        // On the last block
+                        if (endIndex === data.length) {
+                            // Pad the remaining bits
+                            let padAmount = FLASH_BLOCK_SIZE - block.length;
+                            block = Buffer.concat([block, new Buffer(padAmount).fill(0xFF)]);
+                        }
                         var buffer = new ArrayBuffer(16);
                         var dv = new DataView(buffer);
                         dv.setUint32(0, block.length, true);
                         dv.setUint32(4, seq, true);
                         dv.setUint32(8, 0, true);  // Uhhh
                         dv.setUint32(12, 0, true);  // Uhhh
-                        this.sendCommand(commands.FLASH_DOWNLOAD_DATA, Buffer.concat([buffer, block]));
+                        requests.push(Buffer.concat([new Buffer(buffer), block]));
                     }
+                    let promiseFunctions = requests.map((req) => () => this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req)
+                        .then((result) => {
+                            if (result.equals(SUCCESS)) {
+                                console.info("Successful flash download");
+                                return true;
+                            } else {
+                                console.error("Flash download fail", result);
+                                throw new Error("Flash download fail", result);
+                            }
+                        }));
+                    return promiseChain(promiseFunctions);
                 }).then((result) => resolve(result));
         });
     }

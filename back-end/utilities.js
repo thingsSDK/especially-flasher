@@ -21,7 +21,20 @@ function repeatPromise(times, callback) {
     return chain;
 }
 
+/**
+ * There is probably a better way to do this.  This returns a synchronized thenable chain.
+ */
+function promiseChain(promiseFunctions) {
+    log.debug("Chaining %d promises", promiseFunctions.length);
+    return promiseFunctions.reduce((prev, current, index) => {
+        log.debug("Chaining promise #%d", index);
+        // Lazily return the promise
+        return prev.then(() => current());
+    }, Promise.resolve());
+}
+
 module.exports = {
     delay: delay,
-    repeatPromise: repeatPromise
+    repeatPromise: repeatPromise,
+    promiseChain: promiseChain
 };
