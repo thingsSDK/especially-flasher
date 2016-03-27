@@ -240,6 +240,8 @@ class RomComm {
         if (command === commands.FLASH_DOWNLOAD_DATA) {
             // There are additional headers here....
             checksum = this.calculateChecksum(data.slice(16));
+        } else if (command === commands.FLASH_DOWNLOAD_DONE) {
+            // Nothing to see here
         } else {
             checksum = this.calculateChecksum(data);
         }
@@ -360,6 +362,18 @@ class RomComm {
                     return promiseChain(promiseFunctions);
                 }).then((result) => resolve(result));
         });
+    }
+
+    flashFinish(reboot) {
+        let buffer = new ArrayBuffer(4);
+        let dv = new DataView(buffer);
+        // ???:csd - That flip is correct...probably a better word
+        dv.setUint32(0, reboot ? 0 : 1, true);
+        return this.sendCommand(commands.FLASH_DOWNLOAD_DONE, new Buffer(buffer))
+            .then((result) => {
+                log.info("Received result", result);
+                this.isInBootLoader = false;
+            });
     }
 
 
