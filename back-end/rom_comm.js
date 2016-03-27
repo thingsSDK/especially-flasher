@@ -236,10 +236,17 @@ class RomComm {
         // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
         let buf = new ArrayBuffer(8);
         let dv = new DataView(buf);
+        let checksum = 0;
+        if (command === commands.FLASH_DOWNLOAD_DATA) {
+            // There are additional headers here....
+            checksum = this.calculateChecksum(data.slice(16));
+        } else {
+            checksum = this.calculateChecksum(data);
+        }
         dv.setUint8(0, 0x00);
         dv.setUint8(1, command);
         dv.setUint16(2, data.byteLength, true);
-        dv.setUint32(4, this.calculateChecksum(data), true);
+        dv.setUint32(4, checksum, true);
         return new Buffer(buf);
     }
 
