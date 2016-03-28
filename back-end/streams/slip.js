@@ -27,8 +27,6 @@ class SlipDecoder extends Transform {
         this.decoded = new Buffer(256);
     }
 
-    // TODO:csd - Write flush
-
     _transform(chunk, encoding, done) {
         log.info("SlipDecoder._transform", encoding, chunk.length);
         for (let index = 0; index < chunk.length; index++) {

@@ -60,6 +60,9 @@ class EspBoard {
 
 }
 
+/**
+ * Tested: Adafruit Huzzah
+ */
 class Esp12 extends EspBoard {
     constructor(port) {
         super(port);
@@ -71,6 +74,7 @@ class Esp12 extends EspBoard {
     resetIntoBootLoader() {
         // RTS - Request To Send
         // DTR - Data Terminal Ready
+        // NOTE: Must set values at the same time.
         log.info("Resetting board");
         return this.portSet({rts: true, dtr:false})
             .then(() => delay(5))

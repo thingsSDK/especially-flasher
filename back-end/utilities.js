@@ -9,6 +9,10 @@ function delay(time) {
     });
 }
 
+/**
+ * Repeats a promise for `times` amount.
+ * `callback` is a no parameter based function that **returns** a Promise.
+ */
 function repeatPromise(times, callback) {
     let chain = Promise.resolve();
     // Range just used for closure based loop

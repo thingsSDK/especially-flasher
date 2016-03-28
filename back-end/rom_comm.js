@@ -10,11 +10,6 @@ const repeatPromise = require("./utilities").repeatPromise;
 const promiseChain = require("./utilities").promiseChain;
 
 
-// ../esptool.py --port /dev/cu.SLAB_USBtoUART --baud 115200 \
-//   write_flash --flash_freq 80m --flash_mode qio --flash_size 32m \
-//   0x0000 "boot_v1.4(b1).bin" 0x1000 espruino_esp8266_user1.bin \
-//   0x3FC000 esp_init_data_default.bin 0x3FE000 blank.bin
-
 const commands = {
     CMD0: 0x00,
     CMD1: 0x01,
@@ -51,7 +46,12 @@ const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
 const FLASH_BLOCK_SIZE = 0x400;
 const SUCCESS = new Buffer([0x00, 0x00]);
 
-
+/**
+ * An abstraction of talking to the ever so finicky ESP8266 ROM.
+ * Many thanks to the C library (https://github.com/igrr/esptool-ck)
+ * and the Python version of the same regard (https://github.com/themadinventor/esptool/)
+ * that helped suss out the weird cases.
+ */
 class RomComm {
     constructor(config) {
         this._port = new SerialPort(config.portName, {
@@ -80,31 +80,43 @@ class RomComm {
         this.out = new slip.SlipEncoder();
         this._port.pipe(this.in);
         this.out.pipe(this._port);
-        this.in.on("data", (data) => {
-            // Data coming in here has been SLIP escaped
-            if (data.length < 8) {
-                log.error("Missing header");
-                return;
-            }
-            let headerBytes = data.slice(0, 8);
-            let header = this.headerPacketFrom(headerBytes);
-            if (header.direction != 0x01) {
-                log.error("Invaid direction", header.direction);
-                return;
-            }
-            let commandName = commandToKey(header.command);
-            let body = data.slice(8, 8 + header.size);
-            if (header.command in validateCommandSuccess) {
-                if (!body.equals(SUCCESS)) {
-                    log.error("%s returned %s", commandName, body);
-                    throw new Error("Invalid status from " + commandName + " was " + body);
-                }
-            }
-            log.info("Emitting", commandName, body);
-            this.in.emit(commandName, body);
-        });
+        this.in.on("data", (data) => this.handleResponse(data));
     }
 
+    /**
+     * Response from the device are eventually sensical.  Hold tight.
+     */
+    handleResponse(data) {
+        // Data coming in here has been SLIP escaped
+        if (data.length < 8) {
+            log.error("Missing header");
+            // Not throwing error, let it fall through
+            return;
+        }
+        let headerBytes = data.slice(0, 8);
+        let header = this.headerPacketFrom(headerBytes);
+        if (header.direction != 0x01) {
+            log.error("Invaid direction", header.direction);
+            // Again, intentionally not throwing error, it will communicate correctly eventually
+            return;
+        }
+        let commandName = commandToKey(header.command);
+        let body = data.slice(8, 8 + header.size);
+        // Most commands just return `SUCCESS` or 0x00 0x00
+        if (header.command in validateCommandSuccess) {
+            if (!body.equals(SUCCESS)) {
+                log.error("%s returned %s", commandName, body);
+                throw new Error("Invalid status from " + commandName + " was " + body);
+            }
+        }
+        log.info("Emitting", commandName, body);
+        // TODO:csd - Make the RomComm an EventEmitter?
+        this.in.emit(commandName, body);
+    }
+
+    /**
+     * Opens the port and flips into bootloader
+     */
     open() {
         return new Promise((resolve, reject) => {
             this._port.open((error) => {
@@ -118,11 +130,14 @@ class RomComm {
         }).then(() => this.connect());
     }
 
+    /**
+     * Leaves bootloader mode and closes the port
+     */
     close() {
         return this.flashAddress(0, 0)
             .then((result) => this.flashFinish(false))
             .then((result) => this._port.close((err) => {
-                this.isInBootLoader = false;
+                log.info("Closing port...");
             }));
     }
 
@@ -136,6 +151,10 @@ class RomComm {
     }
 
 
+    /**
+     * The process of syncing gets the software and hardware aligned.
+     * Due to the whacky responses, you can't really wait for a proper response
+     */
     sync(ignoreResponse) {
         log.info("Syncing");
         return this.sendCommand(commands.SYNC_FRAME, SYNC_FRAME, ignoreResponse)
@@ -148,6 +167,8 @@ class RomComm {
     }
 
     connect() {
+        // Eventually responses calm down, but on initial contact, responses are not standardized.
+        // This tries until break through is made.
         return repeatPromise(5, () => {
             if (this.isInBootLoader) {
                 log.info("In Bootloader not re-connecting");
@@ -186,8 +207,12 @@ class RomComm {
             }).then(() => this.sync(true));
     }
 
+    /**
+     * Send appropriate C struct header along with command as required
+     * SEE:  https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
+     */
     headerPacketFor(command, data) {
-        // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
+
         let buf = new ArrayBuffer(8);
         let dv = new DataView(buf);
         let checksum = 0;
@@ -197,15 +222,19 @@ class RomComm {
         } else if (command === commands.FLASH_DOWNLOAD_DONE) {
             // Nothing to see here
         } else {
+            // Most commands want the checksum of the entire data packet
             checksum = this.calculateChecksum(data);
         }
-        dv.setUint8(0, 0x00);
-        dv.setUint8(1, command);
-        dv.setUint16(2, data.byteLength, true);
+        dv.setUint8(0, 0x00); // Direction, 0x00 is request
+        dv.setUint8(1, command); // Command, see commands constant
+        dv.setUint16(2, data.byteLength, true); // Size of request
         dv.setUint32(4, checksum, true);
         return new Buffer(buf);
     }
 
+    /**
+     * Unpack the response header
+     */
     headerPacketFrom(buffer) {
         let header = {};
         header.direction = buffer.readUInt8(0);
@@ -219,6 +248,9 @@ class RomComm {
         return Math.floor((length + blockSize - 1) / blockSize);
     }
 
+    /**
+     * Erases the area before flashing it
+     */
     prepareFlashAddress(address, size) {
         log.info("Preparing flash address", address, size);
         let numBlocks = this.determineNumBlocks(FLASH_BLOCK_SIZE, size);
@@ -300,10 +332,13 @@ class RomComm {
         });
     }
 
+    /**
+     * Must be called after flashing has occurred to switch modes
+     */
     flashFinish(reboot) {
         let buffer = new ArrayBuffer(4);
         let dv = new DataView(buffer);
-        // ???:csd - That flip is correct...probably a better word
+        // FIXME:csd - That inverted logic is correct...probably a better variable name than reboot
         dv.setUint32(0, reboot ? 0 : 1, true);
         return this.sendCommand(commands.FLASH_DOWNLOAD_DONE, new Buffer(buffer))
             .then((result) => {
@@ -312,10 +347,13 @@ class RomComm {
             });
     }
 
-
-    // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
-    // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
+    /**
+     * Sends defined commands to ESP8266 and patiently awaits response through asynchronous nature of
+     * node-serialport.
+     */
     sendCommand(command, data, ignoreResponse) {
+        // https://github.com/themadinventor/esptool/blob/master/esptool.py#L108
+        // https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.c#L103
         return new Promise((resolve, reject) => {
             if (command != commands.NO_COMMAND) {
                 let sendHeader = this.headerPacketFor(command, data);
@@ -345,7 +383,5 @@ class RomComm {
         });
     }
 }
-
-
 
 module.exports = RomComm;
