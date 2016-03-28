@@ -119,8 +119,11 @@ class RomComm {
     }
 
     close() {
-        // TODO: Remove from boot loader
-        this._port.close();
+        return this.flashAddress(0, 0)
+            .then((result) => this.flashFinish(false))
+            .then((result) => this._port.close((err) => {
+                this.isInBootLoader = false;
+            }));
     }
 
     calculateChecksum(data) {
@@ -336,7 +339,7 @@ class RomComm {
                         resolve(response);
                     });
                 } else {
-                    log.info("Someone is already awaiting", commandName);
+                    log.warn("Someone is already awaiting for %s", commandName);
                 }
             }
         });
