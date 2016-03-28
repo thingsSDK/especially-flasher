@@ -5,9 +5,7 @@ const SerialPort = require("serialport").SerialPort;
 const log = require("./logger");
 const slip = require("./streams/slip");
 const boards = require("./boards");
-const delay = require("./utilities").delay;
-const repeatPromise = require("./utilities").repeatPromise;
-const promiseChain = require("./utilities").promiseChain;
+const { delay, repeatPromise, promiseChain }  = require("./utilities");
 
 
 const commands = {

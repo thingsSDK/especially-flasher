@@ -4,7 +4,7 @@
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
 
-function $(id) { return document.getElementById(id) }
+function $(id) { return document.getElementById(id); }
 
 const flashButton = $("flash-button");
 const appStatus = $("status");

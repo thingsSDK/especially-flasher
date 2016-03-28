@@ -2,6 +2,12 @@
 
 const log = require("./logger");
 
+/**
+ * Creates delays in time. Ideal for gaurenteeing time between executions
+ * between {Promise} resolve handlers.
+ * @param time in milliseconds
+ * @returns {Promise}
+ */
 function delay(time) {
     return new Promise((resolve) => {
         log.info("Delaying for %d ms", time);
@@ -10,8 +16,10 @@ function delay(time) {
 }
 
 /**
- * Repeats a promise for `times` amount.
- * `callback` is a no parameter based function that **returns** a Promise.
+ * Repeats a promise a given number of times.
+ * @param times. The number of times to repeat a given promise.
+ * @param callback is a no parameter based function that returns a {Promise}.
+ * @returns {Promise}
  */
 function repeatPromise(times, callback) {
     let chain = Promise.resolve();

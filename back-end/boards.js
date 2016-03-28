@@ -1,7 +1,7 @@
 "use strict";
 
 const log = require("./logger");
-const delay = require("./utilities").delay;
+const { delay } = require("./utilities");
 
 const FLASH_MODES = {
     qio: 0,
@@ -61,7 +61,8 @@ class EspBoard {
 }
 
 /**
- * Tested: Adafruit Huzzah
+ * Tested: Adafruit Feather Huzzah
+ * Needs testing: Adafruit Huzzah, SparkFun Thing, SparkFun Thing Dev Board
  */
 class Esp12 extends EspBoard {
     constructor(port) {
