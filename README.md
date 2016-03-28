@@ -24,13 +24,13 @@ const esp = new RomComm({
 esp.open().then((result) => {
     log.info("ESP is open", result);
     esp.flashAddressFromFile(0x0000, "/path/to/binaries/boot_v1.4(b1).bin")
-        .then((result) => esp.flashAddressFromFile(0x1000, "/path/to/binaries/espruino_esp8266_user1.bin"))
-        .then((result) => esp.flashAddressFromFile(0x3FC000, "/path/to/binaries/esp_init_data_default.bin"))
-        .then((result) => esp.flashAddressFromFile(0x3FE000, "/path/to/binaries/blank.bin"))
-        .then((result) => esp.close())
+        .then(() => esp.flashAddressFromFile(0x1000, "/path/to/binaries/espruino_esp8266_user1.bin"))
+        .then(() => esp.flashAddressFromFile(0x3FC000, "/path/to/binaries/esp_init_data_default.bin"))
+        .then(() => esp.flashAddressFromFile(0x3FE000, "/path/to/binaries/blank.bin"))
+        .then(() => esp.close())
         .then((result) => log.info("Flashed to latest Espruino build!", result));
 }).catch((error) => {
-    log.error("Damnit!", error);
+    log.error("Oh noes!", error);
 });
 ```
 
