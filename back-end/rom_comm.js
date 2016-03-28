@@ -4,6 +4,7 @@ const fs = require("fs");
 const SerialPort = require("serialport").SerialPort;
 const log = require("./logger");
 const slip = require("./streams/slip");
+const boards = require("./boards");
 const delay = require("./utilities").delay;
 const repeatPromise = require("./utilities").repeatPromise;
 const promiseChain = require("./utilities").promiseChain;
@@ -30,6 +31,12 @@ const commands = {
     NO_COMMAND: 0xFF
 };
 
+const validateCommandSuccess = [
+    commands.FLASH_DOWNLOAD_BEGIN,
+    commands.FLASH_DOWNLOAD_DATA,
+    commands.FLASH_DOWNLOAD_DONE
+];
+
 function commandToKey(command) {
     // value to key
     return Object.keys(commands).find((key) => commands[key] === command);
@@ -44,72 +51,6 @@ const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
 const FLASH_BLOCK_SIZE = 0x400;
 const SUCCESS = new Buffer([0x00, 0x00]);
 
-const FLASH_MODES = {
-    qio: 0,
-    qout: 1,
-    dio: 2,
-    dout: 3
-};
-
-const FLASH_FREQUENCIES = {
-    "40m": 0,
-    "26m": 1,
-    "20m": 2,
-    "80m": 0xf
-};
-
-const FLASH_SIZES = {
-    "4m": 0x00,
-    "2m": 0x10,
-    "8m": 0x20,
-    "16m": 0x30,
-    "32m": 0x40,
-    "16m-c1": 0x50,
-    "32m-c1": 0x60,
-    "32m-c2": 0x70
-};
-
-class Esp12 {
-    // --flash_freq 80m --flash_mode qio --flash_size 32m
-    constructor(port) {
-        this.port = port;
-        this.flashFrequency = "80m";
-        this.flashMode = "qio";
-        this.flashSize = "32m";
-    }
-
-    flashInfoAsBytes() {
-        let buffer = new ArrayBuffer(2);
-        let dv = new DataView(buffer);
-        dv.setUint8(0, FLASH_MODES[this.flashMode]);
-        dv.setUint8(1, FLASH_SIZES[this.flashSize] + FLASH_FREQUENCIES[this.flashFrequency]);
-        return new Buffer(buffer);
-    }
-
-    portSet(options) {
-        return new Promise((resolve, reject) => {
-            log.info("Setting port", options);
-            this.port.set(options, (err, result) => {
-                if (err) {
-                    reject(err);
-                }
-                resolve(result);
-            });
-        });
-    }
-
-    resetIntoBootLoader() {
-        // RTS - Request To Send
-        // DTR - Data Terminal Ready
-        log.info("Resetting board");
-        return this.portSet({rts: true, dtr:false})
-            .then(() => delay(5))
-            .then(() => this.portSet({rts: false, dtr: true}))
-            .then(() => delay(50))
-            .then(() => this.portSet({rts: false, dtr: false}));
-    }
-}
-
 
 class RomComm {
     constructor(config) {
@@ -123,7 +64,11 @@ class RomComm {
             dsrdtr: false
         }, false);
         this.bindPort();
-        var BoardFactory = config.BoardFactory ? config.BoardFactory : Esp12;
+        var boardName = config.boardName ? config.boardName : "Esp12";
+        var BoardFactory = boards[boardName];
+        if (BoardFactory === undefined) {
+            throw new Error("Unkown board " + boardName);
+        }
         this.board = new BoardFactory(this._port);
         this.config = config;
         this.isInBootLoader = false;
@@ -136,6 +81,7 @@ class RomComm {
         this._port.pipe(this.in);
         this.out.pipe(this._port);
         this.in.on("data", (data) => {
+            // Data coming in here has been SLIP escaped
             if (data.length < 8) {
                 log.error("Missing header");
                 return;
@@ -148,7 +94,12 @@ class RomComm {
             }
             let commandName = commandToKey(header.command);
             let body = data.slice(8, 8 + header.size);
-
+            if (header.command in validateCommandSuccess) {
+                if (!body.equals(SUCCESS)) {
+                    log.error("%s returned %s", commandName, body);
+                    throw new Error("Invalid status from " + commandName + " was " + body);
+                }
+            }
             log.info("Emitting", commandName, body);
             this.in.emit(commandName, body);
         });
@@ -294,16 +245,7 @@ class RomComm {
         dv.setUint32(4, numBlocks, true);
         dv.setUint32(8, FLASH_BLOCK_SIZE, true);
         dv.setUint32(12, address, true);
-        return this.sendCommand(commands.FLASH_DOWNLOAD_BEGIN, new Buffer(buffer))
-            .then((result) => {
-                log.info("Flash download received back", result);
-                if (result.equals(SUCCESS)) {
-                    return true;
-                } else {
-                    log.error("Invalid response", result);
-                    throw Error("Received unknown response: " + result);
-                }
-            });
+        return this.sendCommand(commands.FLASH_DOWNLOAD_BEGIN, new Buffer(buffer));
     }
 
     flashAddressFromFile(address, fileName) {
@@ -349,16 +291,7 @@ class RomComm {
                         dv.setUint32(12, 0, true);  // Uhhh
                         requests.push(Buffer.concat([new Buffer(buffer), block]));
                     }
-                    let promiseFunctions = requests.map((req) => () => this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req)
-                        .then((result) => {
-                            if (result.equals(SUCCESS)) {
-                                console.info("Successful flash download");
-                                return true;
-                            } else {
-                                console.error("Flash download fail", result);
-                                throw new Error("Flash download fail", result);
-                            }
-                        }));
+                    let promiseFunctions = requests.map((req) => () => this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req));
                     return promiseChain(promiseFunctions);
                 }).then((result) => resolve(result));
         });
