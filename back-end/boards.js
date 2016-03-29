@@ -1,7 +1,7 @@
 "use strict";
 
 const log = require("./logger");
-const { delay } = require("./utilities");
+const delay = require("./utilities").delay;
 
 const FLASH_MODES = {
     qio: 0,

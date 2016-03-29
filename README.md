@@ -18,7 +18,7 @@ const log = require("./logger");
 
 const esp = new RomComm({
     portName: "/dev/cu.SLAB_USBtoUART",
-    baudRate: 115200,
+    baudRate: 115200
 });
 
 esp.open().then((result) => {
