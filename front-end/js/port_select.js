@@ -58,4 +58,4 @@ module.exports = class PortSelect {
     set disabled (value) {
         this.selectElement.disabled = value;
     }
-}
+};

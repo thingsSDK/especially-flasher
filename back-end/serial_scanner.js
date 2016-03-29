@@ -15,7 +15,7 @@ module.exports = class SerialScanner extends EventEmitter {
                     this.emit("ports", this.ports);
                 });
             }
-        )
+        );
     }
 
     /**
@@ -27,13 +27,13 @@ module.exports = class SerialScanner extends EventEmitter {
         serialport.list(
             (err, ports) => {
                 this._listWithCallback(err, ports, () => {
-                    let newPorts = ports.map(this._portMap);
+                    const newPorts = ports.map(this._portMap);
                     this.checkDeviceRemoved(newPorts);
                     this.checkDeviceAdded(newPorts);
                     this.ports = newPorts;
                 });
             }
-        )
+        );
     }
 
     /**
