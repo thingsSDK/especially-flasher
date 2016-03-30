@@ -3,7 +3,7 @@
   "board": "ESP8266 ESP-12",
   "description": "Official Binaries for the Espruino Runtime for the ESP8266 MCU ESP-12",
   "download": "http://www.espruino.com/files/espruino_1v85.zip",
-  "recipes": [
+  "steps": [
     {
       "unzip": {
         "source": "espruino_1v85.zip",
