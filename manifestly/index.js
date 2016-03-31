@@ -2,14 +2,37 @@
 
 const fs = require("fs");
 const fetch = require("node-fetch");
-const ManifestPreparer = require("./manifest").ManifestPreparer;
+const prepareBinaries = require("./manifest");
+const log = require("../back-end/logger");
+const RomComm = require("../back-end/rom_comm");
 
-fs.readFile("./manifest.json", function(err, data){
+fs.readFile("./manifest.json", (err, data) => {
     if(err) throw err;
-    let manifest = Object.assign({}, JSON.parse(data), {fetch});
+    const manifest = JSON.parse(data);
+    prepareBinaries(manifest, (err, flashSpec) => {
+        if(err) throw err;
 
-    let preparer = new ManifestPreparer(manifest);
+        const esp = new RomComm({
+            portName: "/dev/cu.SLAB_USBtoUART",
+            baudRate: 115200
+        });
 
-    preparer.prepare();
+        esp.open().then((result) => {
+            log.info("ESP is open", result);
+            const firstSpec = flashSpec.shift();
+            let promise = esp.flashAddress(Number.parseInt(firstSpec.address), firstSpec.buffer);
+
+            flashSpec.forEach((spec) => {
+               promise = promise.then(()=> {
+                   return esp.flashAddress(Number.parseInt(spec.address), spec.buffer)
+               });
+            });
+
+            return promise.then(() => esp.close())
+                .then((result) => log.info("Flashed to latest Espruino build!", result));
+        }).catch((error) => {
+            log.error("Oh noes!", error);
+        });
+    });
 });
 
