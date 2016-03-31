@@ -38,3 +38,6 @@ typings
 
 # Webstorm/JetBrains
 .idea
+
+# Local builds
+/builds

@@ -4,7 +4,8 @@
   "description": "A GUI tool for flashing the Espruino JavaScript runtime on Adafruit Huzzah (ESP8366 based) boards",
   "main": "index.js",
   "scripts": {
-    "start": "electron index.js"
+    "start": "electron index.js",
+    "pack:osx": "./node_modules/.bin/electron-packager . $npm_package_productName --app-version=$npm_package_version --version=0.36.9 --out=builds --ignore='^/build$' --platform=darwin --arch=x64 --icon=icon.icns --overwrite"
   },
   "repository": {
     "type": "git",
@@ -29,6 +30,7 @@
     "serialport": "^2.0.7-beta1"
   },
   "devDependencies": {
+    "electron-packager": "^6.0.0",
     "electron-prebuilt": "^0.36.9"
   }
 }
