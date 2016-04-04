@@ -124,6 +124,7 @@ class RomComm {
                 if (error) {
                     reject(error);
                 } else {
+                    this.portIsOpen = true;
                     resolve();
                 }
             });
@@ -138,6 +139,7 @@ class RomComm {
             .then((result) => this.flashFinish(false))
             .then((result) => this._port.close((err) => {
                 log.info("Closing port...");
+                this.portIsOpen = false;
             }));
     }
 
@@ -360,12 +362,14 @@ class RomComm {
                 let message = Buffer.concat([sendHeader, data], sendHeader.length + data.length);
                 this.out.write(message, 'buffer', (err, res) => {
                     delay(5).then(() => {
-                        this._port.drain((drainErr, results) => {
-                            log.info("Draining", drainErr, results);
-                            if (ignoreResponse) {
-                                resolve("Response was ignored");
-                            }
-                        });
+                        if (ignoreResponse) {
+                            resolve("Response was ignored");
+                        }
+                        if (this.portIsOpen) {
+                            this._port.drain((drainErr, results) => {
+                                log.info("Draining", drainErr, results);
+                            });
+                        }
                     });
                });
             }
