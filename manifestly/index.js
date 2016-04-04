@@ -19,8 +19,7 @@ fs.readFile("./manifest.json", (err, data) => {
 
         esp.open().then((result) => {
             log.info("ESP is open", result);
-            const firstSpec = flashSpec.shift();
-            let promise = esp.flashAddress(Number.parseInt(firstSpec.address), firstSpec.buffer);
+            let promise = Promise.resolve();
 
             flashSpec.forEach((spec) => {
                promise = promise.then(()=> {
