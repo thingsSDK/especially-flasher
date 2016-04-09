@@ -1,11 +1,9 @@
 "use strict";
 
-const autoUpdater = require('auto-updater');
 const os = require('os').platform();
 //Relative to index.html not app.js
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
-const packageInfo = require('./package.json');
 
 function $(id) { return document.getElementById(id); }
 
@@ -38,10 +36,6 @@ serialScanner.on("deviceRemoved", (port ) => {
 
 serialScanner.on("error", onError);
 
-autoUpdater.on("checking-for-update", () => {
-    new Notification("Checking for updates");
-});
-
 /**
  * Updates UI to say it's ready
  */
@@ -70,19 +64,12 @@ function onError(error){
     appStatus.textContent = error.message;
 }
 
-function initUpdater() {
-    let updateFeed = `http://localhost:3000/updates/${packageInfo.name}/latest`;
-    autoUpdater.setFeedURL(updateFeed + '?v=' + packageInfo.version);
-    autoUpdater.checkForUpdates();
-}
-
 /**
  * Sets up UI
  */
 function init() {
     serialScanner.scan();
     setInterval(serialScanner.checkForChanges.bind(serialScanner), pollTime);
-    initUpdater();
 }
 
 init();
