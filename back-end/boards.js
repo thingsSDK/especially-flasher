@@ -31,6 +31,7 @@ const FLASH_SIZES = {
 class EspBoard {
     constructor(port) {
         this.port = port;
+        this.isInBootLoader = false;
     }
 
     portSet(options) {
@@ -82,6 +83,7 @@ class Esp12 extends EspBoard {
             .then(() => this.portSet({rts: false, dtr: true}))
             .then(() => delay(50))
             .then(() => this.portSet({rts: false, dtr: false}));
+
     }
 }
 
