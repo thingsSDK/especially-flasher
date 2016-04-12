@@ -6,7 +6,7 @@ const log = require("./logger");
 const slip = require("./streams/slip");
 const boards = require("./boards");
 const delay = require("./utilities").delay;
-const repeatPromise = require("./utilities").repeatPromise;
+const retryPromiseUntil = require("./utilities").retryPromiseUntil;
 const promiseChain = require("./utilities").promiseChain;
 
 
@@ -27,6 +27,7 @@ const commands = {
 };
 
 const validateCommandSuccess = [
+    commands.SYNC_FRAME,
     commands.FLASH_DOWNLOAD_BEGIN,
     commands.FLASH_DOWNLOAD_DATA,
     commands.FLASH_DOWNLOAD_DONE
@@ -45,6 +46,7 @@ const SYNC_FRAME = new Buffer([0x07, 0x07, 0x12, 0x20,
 
 const FLASH_BLOCK_SIZE = 0x400;
 const SUCCESS = new Buffer([0x00, 0x00]);
+const REQUIRED_SUCCESSFUL_SYNC_COUNT = 10;
 
 /**
  * An abstraction of talking to the ever so finicky ESP8266 ROM.
@@ -71,7 +73,6 @@ class RomComm {
         }
         this.board = new BoardFactory(this._port);
         this.config = config;
-        this.isInBootLoader = false;
     }
 
     bindPort() {
@@ -163,7 +164,7 @@ class RomComm {
             .then((response) => {
                 if (!ignoreResponse) {
                     log.info("Sync response completed!", response);
-                    this.isInBootLoader = true;
+                    this.board.isInBootLoader = true;
                 }
             });
     }
@@ -171,29 +172,14 @@ class RomComm {
     connect() {
         // Eventually responses calm down, but on initial contact, responses are not standardized.
         // This tries until break through is made.
-        return repeatPromise(5, () => {
-            if (this.isInBootLoader) {
-                log.info("In Bootloader not re-connecting");
-                return true;
-            } else {
-                return this._connectAttempt();
-            }
-        }).then(() => this.sync())
-        .then(() => this.isInBootLoader);
+        this._listenForSuccessfulSync();
+        return retryPromiseUntil(() => this._connectAttempt(), () => this.board.isInBootLoader);
     }
 
     _connectAttempt() {
         return this.board.resetIntoBootLoader()
                 .then(() => delay(100))
-                // And a 5x loop here
-                .then(() => repeatPromise(5, () => {
-                    if (this.isInBootLoader) {
-                        log.info("In Bootloader not syncing");
-                        return true;
-                    } else {
-                        return this._flushAndSync();
-                    }
-                }));
+                .then(() => retryPromiseUntil(() => this._flushAndSync(), () => this.board.isInBootLoader, 10));
     }
 
     _flushAndSync() {
@@ -207,6 +193,19 @@ class RomComm {
                         resolve();
                     });
             }).then(() => this.sync(true));
+    }
+
+    _listenForSuccessfulSync() {
+        let commandName = commandToKey(commands.SYNC_FRAME);
+        let successfulSyncs = 0;
+        this.in.on(commandName, (response) => {
+            successfulSyncs++;
+            if (successfulSyncs >= REQUIRED_SUCCESSFUL_SYNC_COUNT) {
+                log.info("Got enough successful syncs");
+                this.board.isInBootLoader = true;
+                this.in.removeAllListeners(commandName);
+            }
+        });
     }
 
     /**
@@ -345,7 +344,7 @@ class RomComm {
         return this.sendCommand(commands.FLASH_DOWNLOAD_DONE, new Buffer(buffer))
             .then((result) => {
                 log.info("Received result", result);
-                this.isInBootLoader = false;
+                this.board.isInBootLoader = false;
             });
     }
 
@@ -361,13 +360,13 @@ class RomComm {
                 let sendHeader = this.headerPacketFor(command, data);
                 let message = Buffer.concat([sendHeader, data], sendHeader.length + data.length);
                 this.out.write(message, 'buffer', (err, res) => {
-                    delay(5).then(() => {
+                    delay(10).then(() => {
                         if (ignoreResponse) {
                             resolve("Response was ignored");
                         }
                         if (this.portIsOpen) {
                             this._port.drain((drainErr, results) => {
-                                log.info("Draining", drainErr, results);
+                                log.info("Draining after write", drainErr, results);
                             });
                         }
                     });
