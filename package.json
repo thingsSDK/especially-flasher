@@ -1,5 +1,5 @@
 {
-  "name": "especially-flasher",
+  "name": "flasher.js",
   "version": "1.0.0",
   "description": "A GUI tool for flashing the Espruino JavaScript runtime on Adafruit Huzzah (ESP8366 based) boards",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/thingsSDK/especially-flasher.git"
+    "url": "git+ssh://git@github.com/thingsSDK/flasher.js.git"
   },
   "keywords": [
     "espruino",
@@ -21,13 +21,15 @@
   "author": "Andrew Chalkley <andrew@chalkley.org>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/thingsSDK/especially-flasher/issues"
+    "url": "https://github.com/thingsSDK/flasher.js/issues"
   },
-  "homepage": "https://github.com/thingsSDK/especially-flasher#readme",
+  "homepage": "https://github.com/thingsSDK/flasher.js#readme",
   "dependencies": {
     "bunyan": "^1.8.0",
     "node-binary": "^1.1.0",
-    "serialport": "^2.0.7-beta1"
+    "serialport": "^2.0.7-beta1",
+    "tar.gz": "^1.0.3",
+    "unzip": "^0.1.11"
   },
   "devDependencies": {
     "electron-packager": "^6.0.0",

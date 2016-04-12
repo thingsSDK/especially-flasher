@@ -11,26 +11,38 @@ const log = require("./logger");
 function delay(time) {
     return new Promise((resolve) => {
         log.info("Delaying for %d ms", time);
-        setTimeout(resolve, time);
+        setTimeout(() => resolve(time), time);
     });
 }
 
 /**
- * Repeats a promise a given number of times.
- * @param times. The number of times to repeat a given promise.
- * @param callback is a no parameter based function that returns a {Promise}.
+ * Repeats a promise until a condition is met, or `maxAttempts` have occurred
+ * @param callback This is a function that should return the promise to repeat
+ * @param checkFn A function that will run on each go, truthy values will stop the loop
+ * @param maxAttempts [OPTIONAL] Number of times this should loop.
  * @returns {Promise}
  */
-function repeatPromise(times, callback) {
-    let chain = Promise.resolve();
-    // Range just used for closure based loop
-    let range = new Array(times)
-        .fill(0)
-        .map((value, index) => index);
-    range.forEach(() => {
-        chain = chain.then(() => callback());
-    });
-    return chain;
+function retryPromiseUntil(callback, checkFn, maxAttempts) {
+    if (!callback.hasOwnProperty("attemptCount")) {
+        callback.attemptCount = 0;
+    }
+
+    let result = checkFn();
+    log.debug("Retrying promise...");
+    if (result) {
+        log.info("Check function returned", result);
+        return result;
+    }
+    callback.attemptCount++;
+    log.debug("Performing attempt", callback.attemptCount);
+    if (maxAttempts && callback.attemptCount > maxAttempts) {
+        log.warn("Max attempts reached exiting");
+        return;
+    }
+    // Recursively return the promise
+    return Promise.resolve()
+        .then(() => callback())
+        .then(() => retryPromiseUntil(callback, checkFn, maxAttempts));
 }
 
 /**
@@ -47,6 +59,6 @@ function promiseChain(promiseFunctions) {
 
 module.exports = {
     delay: delay,
-    repeatPromise: repeatPromise,
+    retryPromiseUntil: retryPromiseUntil,
     promiseChain: promiseChain
 };
