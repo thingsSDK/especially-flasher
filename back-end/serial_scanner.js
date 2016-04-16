@@ -3,7 +3,7 @@
 const serialport = require("serialport");
 const EventEmitter = require("events");
 
-module.exports = class SerialScanner extends EventEmitter {
+class SerialScanner extends EventEmitter {
     /**
      * Scans for ports and emits a "ports" event with an array of
      */
@@ -95,4 +95,6 @@ module.exports = class SerialScanner extends EventEmitter {
     }
 
 
-};
+}
+
+module.exports = SerialScanner;

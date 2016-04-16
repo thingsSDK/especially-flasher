@@ -1,34 +1,83 @@
 "use strict";
 
-const URLS = {
-    manifestList: "http://flasher.thingssdk.com/v1/manifest-list.json"
+/**
+ * Constants for application
+ *
+ * manifestList is the url that contains all possible manifests
+ * pollTime is used to check for changes in the serial ports
+ *
+ * @type {{manifestList: string, pollTime: number}}
+ */
+const CONSTANTS = {
+    manifestList: "http://flasher.thingssdk.com/v1/manifest-list.json",
+    pollTime: 1000
 };
 
-//Relative to index.html not app.js
+var last_notification = "";
+
+/************************
+ * Backend dependencies.
+ * Note: Paths are relative to index.html not app.js
+ ************************/
+
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
 const prepareBinaries = require("../back-end/prepare_binaries");
 const log = require("../back-end/logger");
 const RomComm = require("../back-end/rom_comm");
 
-function $(id) { return document.getElementById(id); }
+const serialScanner = new SerialScanner();
+
+/************************
+ * UI Elements
+ ************************/
 
 const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = new PortSelect($("ports"));
 const manifestsSelect = $("manifests");
-const serialScanner = new SerialScanner();
-const pollTime = 1000; // One second
 
-var last_notification = "";
+
+/************************
+ * Utility Functions
+ ************************/
+
+/**
+ * Simple helper returns HTML element from an element's id
+ *
+ * @param id a string of the id of an HTML element
+ * @returns {Element}
+ */
+function $(id) { return document.getElementById(id); }
+
+/**
+ * Processes the response from an HTTP fetch and returns the JSON promise.
+ *
+ * @param response from a fetch call
+ * @returns {Promise}
+ */
+function processJSON(response) {
+    return response.json();
+}
+
+
+
+/************************
+ * Handle UI
+************************/
 
 flashButton.addEventListener("click", event => {
+    disableInputs();
     fetch(manifestsSelect.value)
         .then(processJSON)
         .then(flashWithManifest);
 });
 
-serialScanner.on("ports", (ports) => {
+/************************
+ * Manage serial port events
+ ************************/
+
+ serialScanner.on("ports", (ports) => {
     portsSelect.addAll(ports);
     readyToFlash();
 });
@@ -56,9 +105,16 @@ function readyToFlash() {
 /**
  * Enabled the serial port SELECT and flash BUTTON elements.
  */
-function enableInputs(){
+function enableInputs() {
     portsSelect.disabled = false;
+    manifestsSelect.disabled = false;
     flashButton.disabled = false;
+}
+
+function disableInputs() {
+    portsSelect.disabled = true;
+    manifestsSelect.disabled = true;
+    flashButton.disabled = true;
 }
 
 /**
@@ -73,12 +129,7 @@ function onError(error){
     appStatus.textContent = error.message;
 }
 
-function processJSON(response) {
-    return response.json();
-}
-
 function generateManifestList(manifestsJSON) {
-    console.log(manifestsJSON); 
     manifestsJSON.options.forEach((option) => {
         option.versions.forEach((version) => {
             const optionElement = document.createElement("option");
@@ -91,27 +142,16 @@ function generateManifestList(manifestsJSON) {
 }
 
 function getManifests() {
-    fetch(URLS.manifestList)
+    appStatus.textContent = "Getting latest manifests.";
+    fetch(CONSTANTS.manifestList)
         .then(processJSON)
-        .then(generateManifestList).catch((error) => {
-            console.log(error); 
+        .then(generateManifestList).catch(error => {
             setTimeout(getManifests, pollTime);
         });
 }
 
-/**
- * Sets up UI
- */
-function init() {
-    getManifests();
-    serialScanner.scan();
-    setInterval(serialScanner.checkForChanges.bind(serialScanner), pollTime);
-}
-
-init();
-
 function flashWithManifest(manifest) {
-    console.log(portsSelect.value);
+    appStatus.textContent = `Flashing ${portsSelect.value}`;
     prepareBinaries(manifest, (err, flashSpec) => {
         if(err) throw err;
 
@@ -121,18 +161,20 @@ function flashWithManifest(manifest) {
         });
 
         esp.open().then((result) => {
-            log.info("ESP is open", result);
-            let promise = Promise.resolve();
+            appStatus.textContent = `Flashing ${portsSelect.value}...Openned Port.`;            let promise = Promise.resolve();
 
-            flashSpec.forEach((spec) => {
+            flashSpec.forEach((spec, index) => {
                promise = promise.then(()=> {
+                   appStatus.textContent = `Flashing ${index+1}/${flashSpec.length} binaries.`;
                    return esp.flashAddress(Number.parseInt(spec.address), spec.buffer)
                });
             });
 
             return promise.then(() => esp.close())
                 .then((result) => {
-                    var notification = new Notification("Flash Finished!");        
+                    appStatus.textContent = `Flashing finished!`;
+                    new Notification("Flash Finished!");
+                    readyToFlash();
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
@@ -140,3 +182,18 @@ function flashWithManifest(manifest) {
         });
     });
 }
+
+/**
+ * Get's manifest list for possibilities for flashing,
+ * scans serial ports and sets up timer for checking for changes.
+ */
+function start() {
+    getManifests();
+    serialScanner.scan();
+    setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
+}
+
+/** 
+ * Start Application
+ */
+start();
