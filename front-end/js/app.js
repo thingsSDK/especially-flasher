@@ -157,12 +157,13 @@ function flashWithManifest(manifest) {
 
         const esp = new RomComm({
             portName: portsSelect.value,
-            baudRate: 115200
+            baudRate: 115200,
+            progress: progressHandler
         });
 
         esp.open().then((result) => {
             appStatus.textContent = `Flashing ${portsSelect.value}...Openned Port.`;            let promise = Promise.resolve();
-
+            flashSpec.forEach(createProgressBars);
             flashSpec.forEach((spec, index) => {
                promise = promise.then(()=> {
                    appStatus.textContent = `Flashing ${index+1}/${flashSpec.length} binaries.`;
@@ -180,6 +181,14 @@ function flashWithManifest(manifest) {
             log.error("Oh noes!", error);
         });
     });
+}
+
+function createProgressBars(spec) {
+
+}
+
+function progressHandler(spec) {
+
 }
 
 /**

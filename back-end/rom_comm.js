@@ -72,6 +72,7 @@ class RomComm {
             throw new Error("Unkown board " + boardName);
         }
         this.board = new BoardFactory(this._port);
+        this.progressHandler = config.progressHandler;
         this.config = config;
     }
 
