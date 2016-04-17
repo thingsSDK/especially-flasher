@@ -66,7 +66,7 @@ function processJSON(response) {
  * Handle UI
 ************************/
 
-flashButton.addEventListener("click", event => {
+flashButton.addEventListener("click", (event) => {
     disableInputs();
     fetch(manifestsSelect.value)
         .then(processJSON)
@@ -87,7 +87,7 @@ serialScanner.on("deviceAdded", (port) => {
     new Notification(`Added: ${port}!`);
 });
 
-serialScanner.on("deviceRemoved", (port ) => {
+serialScanner.on("deviceRemoved", (port) => {
     portsSelect.remove(port);
     new Notification(`Removed: ${port}!`);
 });
@@ -172,7 +172,6 @@ function flashWithManifest(manifest) {
 
             return promise.then(() => esp.close())
                 .then((result) => {
-                    appStatus.textContent = `Flashing finished!`;
                     new Notification("Flash Finished!");
                     readyToFlash();
                     log.info("Flashed to latest Espruino build!", result);

@@ -1,6 +1,10 @@
 "use strict";
 
-module.exports = class PortSelect {
+class PortSelect {
+    /**
+     * PortSelect constructor. Requires an HTML select element.
+     * @param selectElement an HTMLSelectElement.
+     */
     constructor(selectElement) {
         this.selectElement = selectElement;
         this.map = {}; // Cache matching the text value of a port to OPTION element.
@@ -37,7 +41,6 @@ module.exports = class PortSelect {
         });
     }
 
-
     /**
      * Creates option with the port text and value.
      * @param port
@@ -58,8 +61,14 @@ module.exports = class PortSelect {
     set disabled (value) {
         this.selectElement.disabled = value;
     }
-    
+
+    /**
+     * Pass through
+     * @returns the selectElememnt's value.
+     */
     get value() {
         return this.selectElement.value;
     }
 };
+
+module.exports = PortSelect;
