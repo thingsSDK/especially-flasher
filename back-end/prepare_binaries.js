@@ -25,7 +25,7 @@ function prepareBinaries(manifest, callback) {
                 let body;
                 entry.on("data", function(data){
                     if(body) {
-                        body = Buffer.concat([body, data])
+                        body = Buffer.concat([body, data]);
                     } else {
                         body = data;
                     }
