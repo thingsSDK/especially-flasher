@@ -1,11 +1,12 @@
 {
   "name": "flasher.js",
   "version": "1.0.0",
+  "productName": "Flasher.js",
   "description": "A GUI tool for flashing the Espruino JavaScript runtime on Adafruit Huzzah (ESP8366 based) boards",
   "main": "index.js",
   "scripts": {
     "start": "electron index.js",
-    "pack:osx": "./node_modules/.bin/electron-packager . $npm_package_productName --app-version=$npm_package_version --version=0.36.9 --out=builds --ignore='^/build$' --platform=darwin --arch=x64 --icon=icon.icns --overwrite"
+    "pack": "electron-packager ./ $npm_package_productName --app-version=$npm_package_version --version=0.36.9 --out=builds --ignore='^/build$' --all --overwrite"
   },
   "repository": {
     "type": "git",

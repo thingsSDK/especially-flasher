@@ -43,7 +43,7 @@ app.on('ready', function() {
   mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   let updateFeed = `http://localhost:3000/updates/${packageInfo.name}/latest`;
   autoUpdater.setFeedURL(updateFeed + '?v=' + packageInfo.version);
