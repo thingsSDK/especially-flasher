@@ -1,5 +1,6 @@
 "use strict";
 
+const EventEmitter = require("events");
 const fs = require("fs");
 const SerialPort = require("serialport").SerialPort;
 const log = require("./logger");
@@ -54,8 +55,9 @@ const REQUIRED_SUCCESSFUL_SYNC_COUNT = 10;
  * and the Python version of the same regard (https://github.com/themadinventor/esptool/)
  * that helped suss out the weird cases.
  */
-class RomComm {
+class RomComm extends EventEmitter {
     constructor(config) {
+        super();
         this._port = new SerialPort(config.portName, {
             baudRate: config.baudRate,
             parity: 'none',
@@ -112,8 +114,7 @@ class RomComm {
             }
         }
         log.info("Emitting", commandName, body);
-        // TODO:csd - Make the RomComm an EventEmitter?
-        this.in.emit(commandName, body);
+        this.emit("RECEIVED-" + commandName, body);
     }
 
     /**
@@ -199,12 +200,13 @@ class RomComm {
     _listenForSuccessfulSync() {
         let commandName = commandToKey(commands.SYNC_FRAME);
         let successfulSyncs = 0;
-        this.in.on(commandName, (response) => {
+
+        this.on("RECEIVED-" + commandName, (response) => {
             successfulSyncs++;
             if (successfulSyncs >= REQUIRED_SUCCESSFUL_SYNC_COUNT) {
                 log.info("Got enough successful syncs");
                 this.board.isInBootLoader = true;
-                this.in.removeAllListeners(commandName);
+                this.removeAllListeners("RECEIVED-" + commandName);
             }
         });
     }
@@ -214,7 +216,6 @@ class RomComm {
      * SEE:  https://github.com/igrr/esptool-ck/blob/master/espcomm/espcomm.h#L49
      */
     headerPacketFor(command, data) {
-
         let buf = new ArrayBuffer(8);
         let dv = new DataView(buf);
         let checksum = 0;
@@ -375,9 +376,10 @@ class RomComm {
             }
             if (!ignoreResponse) {
                 let commandName = commandToKey(command);
-                if (this.in.listeners(commandName).length === 0) {
+                let key = "RECEIVED-" + commandName;
+                if (this.listeners(key).length === 0) {
                     log.info("Listening once", commandName);
-                    this.in.once(commandName, (response) => {
+                    this.once(key, (response) => {
                         resolve(response);
                     });
                 } else {
