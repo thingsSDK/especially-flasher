@@ -161,17 +161,16 @@ function flashWithManifest(manifest) {
             progress: progressHandler
         });
 
-        esp.open().then((result) => {
-            appStatus.textContent = `Flashing ${portsSelect.value}...Openned Port.`;            let promise = Promise.resolve();
-            flashSpec.forEach(createProgressBars);
-            flashSpec.forEach((spec, index) => {
-               promise = promise.then(()=> {
-                   appStatus.textContent = `Flashing ${index+1}/${flashSpec.length} binaries.`;
-                   return esp.flashAddress(Number.parseInt(spec.address), spec.buffer)
-               });
-            });
+        esp.on('progress', (progress) => {
+           log.info("Current progress:", progress);
+        });
 
-            return promise.then(() => esp.close())
+        esp.open().then((result) => {
+            appStatus.textContent = `Flashing ${portsSelect.value}...Opened Port.`;
+            let promise = Promise.resolve();
+            flashSpec.forEach(createProgressBars);
+            return esp.flashSpecifications(flashSpec)
+                .then(() => esp.close())
                 .then((result) => {
                     new Notification("Flash Finished!");
                     readyToFlash();
@@ -201,7 +200,7 @@ function start() {
     setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
 }
 
-/** 
+/**
  * Start Application
  */
 start();

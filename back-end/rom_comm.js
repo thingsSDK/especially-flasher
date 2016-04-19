@@ -68,6 +68,7 @@ class RomComm extends EventEmitter {
             dsrdtr: false
         }, false);
         this.bindPort();
+        this.resetState();
         var boardName = config.boardName ? config.boardName : "Esp12";
         var BoardFactory = boards[boardName];
         if (BoardFactory === undefined) {
@@ -78,6 +79,10 @@ class RomComm extends EventEmitter {
         this.config = config;
     }
 
+    resetState() {
+        this.setState("Unknown", {});
+    }
+
     bindPort() {
         this._port.on('error', error => log.error("PORT ERROR", error));
         this.in = new slip.SlipDecoder();
@@ -85,6 +90,13 @@ class RomComm extends EventEmitter {
         this._port.pipe(this.in);
         this.out.pipe(this._port);
         this.in.on("data", (data) => this.handleResponse(data));
+    }
+
+    setState(status, details) {
+        this.state = {
+            display: status,
+            details: details
+        };
     }
 
     /**
@@ -298,6 +310,24 @@ class RomComm extends EventEmitter {
         });
     }
 
+    flashSpecifications(specs) {
+        let totalBytes = specs.reduce(() => specs.buffer.length, 0);
+        let details = {
+            totalFiles: specs.length,
+            totalBytes: totalBytes,
+            flashedBytes: 0
+        };
+        this.setState("Flashing", details);
+        let promiseFunctions = specs.map((spec, index) => () => {
+            details.currentIndex = index;
+            details.currentAddress = spec.address;
+            details.currentSize = spec.buffer.length;
+            return this.flashAddress(Number.parseInt(spec.address), spec.buffer)
+                .then(() => details.flashedBytes += details.currentSize);
+        });
+        return promiseChain(promiseFunctions);
+    }
+
     flashAddress(address, data) {
         return new Promise((resolve, reject) => {
             this.prepareFlashAddress(address, data.length)
@@ -329,10 +359,20 @@ class RomComm extends EventEmitter {
                         dv.setUint32(12, 0, true);  // Uhhh
                         requests.push(Buffer.concat([new Buffer(buffer), block]));
                     }
-                    let promiseFunctions = requests.map((req) => () => this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req));
+                    let promiseFunctions = requests.map((req, index) => () => {
+                        this.reportBlockProgress(req.length, index, requests.length);
+                        return this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req);
+                    });
                     return promiseChain(promiseFunctions);
                 }).then((result) => resolve(result));
         });
+    }
+
+    reportBlockProgress(length, index, total) {
+        this.state.details.blockSize = length;
+        this.state.details.blockIndex = index;
+        this.state.details.totalBlocks = total;
+        this.emit('progress', this.state);
     }
 
     /**
