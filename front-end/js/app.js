@@ -168,7 +168,6 @@ function flashWithManifest(manifest) {
         esp.open().then((result) => {
             appStatus.textContent = `Flashing ${portsSelect.value}...Opened Port.`;
             let promise = Promise.resolve();
-            flashSpec.forEach(createProgressBars);
             return esp.flashSpecifications(flashSpec)
                 .then(() => esp.close())
                 .then((result) => {
