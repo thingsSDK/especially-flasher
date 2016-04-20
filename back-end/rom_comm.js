@@ -75,7 +75,6 @@ class RomComm extends EventEmitter {
             throw new Error("Unkown board " + boardName);
         }
         this.board = new BoardFactory(this._port);
-        this.progressHandler = config.progressHandler;
         this.config = config;
     }
 
@@ -203,7 +202,7 @@ class RomComm extends EventEmitter {
                             reject(error);
                         }
                         log.info("Port flushed");
-
+                        
                         resolve();
                     });
             }).then(() => this.sync(true));
