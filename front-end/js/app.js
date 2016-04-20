@@ -182,14 +182,6 @@ function flashWithManifest(manifest) {
     });
 }
 
-function createProgressBars(spec) {
-
-}
-
-function progressHandler(spec) {
-
-}
-
 /**
  * Get's manifest list for possibilities for flashing,
  * scans serial ports and sets up timer for checking for changes.

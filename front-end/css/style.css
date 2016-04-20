@@ -1,0 +1,56 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+#progress {
+    display: block;
+    border: 1px solid black;
+    background: #00B7FF;
+    width: 0%;
+    height: 10px;
+}
+
+button {
+  clear:both;
+  background: #3498db;
+  border-radius: 28px;
+  color: #fff;
+  font-size: 20px;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+  border:0;
+}
+
+button:hover {
+  background: #3cb0fd;
+  text-decoration: none;
+}
+
+
+label {
+    width: 215px;
+    float: left;
+    clear: both;
+}
+
+select {
+    float: left;
+    width: 200px;
+    font-size: 15px;
+}
+footer {
+   position:fixed;
+   left:0px;
+   bottom:0px;
+   height:30px;
+   width:100%;
+   background: #3cb0fd;
+   color: white;
+}
+
+footer span {
+    top: 5px;
+    left: 10px;
+    position: relative;
+}
