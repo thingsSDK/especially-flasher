@@ -324,8 +324,7 @@ class RomComm extends EventEmitter {
             details.currentIndex = index;
             details.currentAddress = spec.address;
             details.currentSize = spec.buffer.length;
-            return this.flashAddress(Number.parseInt(spec.address), spec.buffer)
-                .then(() => details.flashedBytes += details.currentSize);
+            return this.flashAddress(Number.parseInt(spec.address), spec.buffer);
         });
         return promiseChain(promiseFunctions);
     }
@@ -362,7 +361,8 @@ class RomComm extends EventEmitter {
                         requests.push(Buffer.concat([new Buffer(buffer), block]));
                     }
                     let promiseFunctions = requests.map((req, index) => () => {
-                        this.reportBlockProgress(req.length, index, requests.length);
+                        // 16 is the header
+                        this.reportBlockProgress(req.length - 16, index, requests.length);
                         return this.sendCommand(commands.FLASH_DOWNLOAD_DATA, req);
                     });
                     return promiseChain(promiseFunctions);
@@ -371,6 +371,7 @@ class RomComm extends EventEmitter {
     }
 
     reportBlockProgress(length, index, total) {
+        this.state.details.flashedBytes += length;
         this.state.details.blockSize = length;
         this.state.details.blockIndex = index;
         this.state.details.totalBlocks = total;
