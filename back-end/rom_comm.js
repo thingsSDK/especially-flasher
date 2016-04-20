@@ -312,7 +312,7 @@ class RomComm extends EventEmitter {
 
     flashSpecifications(specs) {
         let totalBytes = specs.reduce((counter, spec) => {
-            counter += spec.buffer.length;
+            return counter + spec.buffer.length;
         }, 0);
         let details = {
             totalFiles: specs.length,
