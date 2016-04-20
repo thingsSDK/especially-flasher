@@ -15,7 +15,6 @@ function addBufferToBinary(flashSpecification, fileName, buffer) {
     });
 }
 
-
 function prepareBinaries(manifest, callback) {
     const flashContents = manifest.flash;
     const downloadRequest = http.get(manifest.download, (response) => {

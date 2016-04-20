@@ -3,42 +3,27 @@
 <head>
     <title>Flasher.js</title>
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/photon.min.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="window">
+    <label for="ports">Select Port:</label>
+    <select title="Select a Serial/COM Port" id="ports" name="ports" class="form-control" disabled>
+    </select>
 
-    <header class="toolbar toolbar-header">
-        <h1 class="title">Flasher.js</h1>
-    </header>
-
-    <div class="window-content">
-        <div class="padded-more">
-            <label for="ports">Select Port:</label>
-            <select title="Select a Serial/COM Port" id="ports" name="ports" class="form-control" disabled>
-            
-            </select>
-        </div>
-        <div class="padded-more">
             <label for="manifests">Select Binaries to Flash:</label>
             <select title="Select Binaries to Flash" id="manifests" name="manifests" class="form-control" disabled>
             
             </select>
-        </div>
-        <div id="progress_bars" class="padded-more">
 
-        </div>
-    </div>
-    <footer class="toolbar toolbar-footer">
-        <div class="toolbar-actions">
-           <span id="status">
-           </span>
-            <button id="flash-button" class="btn btn-primary pull-right" disabled>
+    
+    <button id="flash-button" class="btn btn-primary pull-right" disabled>
                 Flash!
-            </button>
-        </div>
+    </button>
+    <div id="progress"></div>
+    <footer>
+        <span id="status"></span>
     </footer>
-</div>
+
 <!-- Javascript -->
 <script src="js/app.js" charset="utf-8"></script>
 </body>

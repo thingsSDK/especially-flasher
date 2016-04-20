@@ -36,7 +36,7 @@ const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = new PortSelect($("ports"));
 const manifestsSelect = $("manifests");
-
+const progressBar =  $("progress");
 
 /************************
  * Utility Functions
@@ -158,11 +158,11 @@ function flashWithManifest(manifest) {
         const esp = new RomComm({
             portName: portsSelect.value,
             baudRate: 115200,
-            progress: progressHandler
         });
 
         esp.on('progress', (progress) => {
-           log.info("Current progress:", progress);
+            applicationCache.textContent = progress.display;
+            progressBar.style.width = `${Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100)}%`;
         });
 
         esp.open().then((result) => {

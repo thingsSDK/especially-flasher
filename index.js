@@ -27,17 +27,14 @@ app.on('ready', function() {
     height: 160,
     'min-width': 450,
     'min-height': 160,
-    'max-width': 500,
-    'max-height': 550,
-    'accept-first-mouse': true,
-    'title-bar-style': 'hidden'
+    'accept-first-mouse': true
   });
 
   // and load the index.html of the app.
   mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
 
   // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function() {
