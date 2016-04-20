@@ -2,6 +2,7 @@
 const http = require("http");
 const unzip = require("unzip");
 const fs = require("fs");
+const EventEmitter = require("events");
 
 function isBinaryFileRequired(flashSpecification, fileName) {
     return flashSpecification.map(binary => binary.path).indexOf(fileName) !== -1;
@@ -16,11 +17,17 @@ function addBufferToBinary(flashSpecification, fileName, buffer) {
 }
 
 function prepareBinaries(manifest, callback) {
+    const eventEmitter = new EventEmitter();
     const flashContents = manifest.flash;
     const downloadRequest = http.get(manifest.download, (response) => {
         response.pipe(unzip.Parse()).on('entry', (entry) => {
             const fileName = entry.path;
             if (isBinaryFileRequired(flashContents, fileName)) {
+                eventEmitter.emit("entry", {
+                    display: `Extracting ${fileName}`,
+                    stage: "start"
+                });
+            
                 let body;
                 entry.on("data", function(data){
                     if(body) {
@@ -29,6 +36,10 @@ function prepareBinaries(manifest, callback) {
                         body = data;
                     }
                 }).on("end", () => {
+                    eventEmitter.emit("entry", {
+                        display: `Extracted ${fileName}`,
+                        stage: "end"
+                    });
                     addBufferToBinary(flashContents, fileName, body);
                 }).on("error", callback);
 
@@ -41,6 +52,7 @@ function prepareBinaries(manifest, callback) {
         });
         response.on("error", callback);
     });
+    return eventEmitter;
 }
 
 module.exports = prepareBinaries;

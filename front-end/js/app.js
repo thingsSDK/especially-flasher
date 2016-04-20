@@ -152,6 +152,8 @@ function getManifests() {
 
 function flashWithManifest(manifest) {
     appStatus.textContent = `Flashing ${portsSelect.value}`;
+    const numberOfSteps = manifest.flash.length * 2;
+    let currectStepNumber = 0;
     prepareBinaries(manifest, (err, flashSpec) => {
         if(err) throw err;
 
@@ -162,11 +164,13 @@ function flashWithManifest(manifest) {
 
         esp.on('progress', (progress) => {
             applicationCache.textContent = progress.display;
-            progressBar.style.width = `${Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100)}%`;
+            const progressPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100);
+            updateProgressBar(progressPercent);
         });
 
         esp.open().then((result) => {
             appStatus.textContent = `Flashing ${portsSelect.value}...Opened Port.`;
+            updateProgressBar(0);
             let promise = Promise.resolve();
             flashSpec.forEach(createProgressBars);
             return esp.flashSpecifications(flashSpec)
@@ -179,7 +183,15 @@ function flashWithManifest(manifest) {
         }).catch((error) => {
             log.error("Oh noes!", error);
         });
+    }).on("entry", (progress) => {
+        const percent = Math.round((currectStepNumber++/numberOfSteps) * 100);
+        updateProgressBar(percent);
+        appStatus.textContent = progress.display;
     });
+}
+
+function updateProgressBar(percent) {
+    progressBar.style.width = `${percent}%`;
 }
 
 /**
