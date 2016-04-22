@@ -9,6 +9,7 @@ body {
     background: #00B7FF;
     width: 0%;
     height: 10px;
+    float:left;
 }
 
 button {
@@ -20,6 +21,7 @@ button {
   padding: 10px 20px 10px 20px;
   text-decoration: none;
   border:0;
+    float: left;
 }
 
 button:hover {
