@@ -1,58 +1,152 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+* {
+	margin: 0;
+	padding: 0;
 }
 
-#progress {
-    display: block;
-    border: 1px solid black;
-    background: #00B7FF;
-    width: 0%;
-    height: 10px;
-    float:left;
+body {
+	padding: 50px;
+	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+	background: #333;
+	color: white;
 }
 
 button {
-  clear:both;
-  background: #3498db;
-  border-radius: 28px;
-  color: #fff;
-  font-size: 20px;
-  padding: 10px 20px 10px 20px;
-  text-decoration: none;
-  border:0;
-    float: left;
+	clear:both;
+	background: #3498db;
+	border-radius: 5px;
+	color: #fff;
+	padding: 10px 20px 10px 20px;
+	text-decoration: none;
+	border:0;
+    width: 100%;
 }
+
+button:disabled {
+	background: #eee;
+	color: #aaa
+}
+
 
 button:hover {
-  background: #3cb0fd;
-  text-decoration: none;
+	background: #3cb0fd;
+	text-decoration: none;
 }
 
+button:hover:disabled {
+    background: #bbb;
+    color: #aaa
+}
 
 label {
-    width: 215px;
-    float: left;
-    clear: both;
+	width: 180px;
+	display: inline-block;
 }
 
 select {
-    float: left;
-    width: 200px;
-    font-size: 15px;
+	width: 200px;
+	font-size: 15px;
 }
 footer {
-   position:fixed;
-   left:0px;
-   bottom:0px;
-   height:30px;
-   width:100%;
-   background: #3cb0fd;
-   color: white;
+	position:fixed;
+	left:0;
+	bottom:0;
+	height:30px;
+	width:100%;
+	background: #0568c6;
+	color: white;
 }
 
 footer span {
-    top: 5px;
-    left: 10px;
-    position: relative;
+	top: 5px;
+	left: 10px;
+	position: relative;
+}
+
+#progressBar {
+    display:none;
+}
+
+#progress {
+	width: 0;
+}
+
+#form div {
+	margin-bottom: 30px;
+	text-align: center;
+}
+#form label {
+	text-align: right;
+}
+/*
+* https://css-tricks.com/examples/ProgressBars/
+*/
+.meter {
+	height: 40px;  /* Can be anything */
+	position: relative;
+	margin: 40px 0 20px 0; /* Just for demo spacing */
+	background: #555;
+	border-radius: 25px;
+	padding: 10px;
+	box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+}
+.meter > span {
+	display: block;
+	height: 100%;
+	border-top-right-radius: 8px;
+	border-bottom-right-radius: 8px;
+	border-top-left-radius: 20px;
+	border-bottom-left-radius: 20px;
+	background-color: rgb(5, 138, 255);
+	background-image: -webkit-gradient(
+			linear,
+			left bottom,
+			left top,
+			color-stop(0,  rgb(5, 138, 255)),
+			color-stop(1, rgb(71, 190, 240))
+	);
+
+	box-shadow:
+			inset 0 2px 9px  rgba(255,255,255,0.3),
+			inset 0 -2px 6px rgba(0,0,0,0.4);
+	position: relative;
+	overflow: hidden;
+}
+.meter > span:after, .animate > span > span {
+	content: "";
+	position: absolute;
+	top: 0; left: 0; bottom: 0; right: 0;
+	background-image:
+			-webkit-gradient(linear, 0 0, 100% 100%,
+			color-stop(.25, rgba(255, 255, 255, .2)),
+			color-stop(.25, transparent), color-stop(.5, transparent),
+			color-stop(.5, rgba(255, 255, 255, .2)),
+			color-stop(.75, rgba(255, 255, 255, .2)),
+			color-stop(.75, transparent), to(transparent)
+			);
+	z-index: 1;
+	background-size: 50px 50px;
+	-webkit-animation: move 2s linear infinite;
+	border-top-right-radius: 8px;
+	border-bottom-right-radius: 8px;
+	border-top-left-radius: 20px;
+	border-bottom-left-radius: 20px;
+	overflow: hidden;
+}
+
+.animate > span:after {
+	display: none;
+}
+
+@-webkit-keyframes move {
+	0% {
+		background-position: 0 0;
+	}
+	100% {
+		background-position: 50px 50px;
+	}
+}
+
+.nostripes > span > span, .nostripes > span:after {
+	-webkit-animation: none;
+	background-image: none;
 }
