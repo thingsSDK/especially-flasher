@@ -6,24 +6,30 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <label for="ports">Select Port:</label>
-    <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
+<div id="form">
+    <div>
+        <label for="ports">Select Port:</label>
+        <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
 
-    </select>
+        </select>
+    </div>
+    <div>
+        <label for="manifests">Select Binaries to Flash:</label>
+        <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
 
-    <label for="manifests">Select Binaries to Flash:</label>
-    <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
+        </select>
+    </div>
+    <div>
+        <button id="flash-button" disabled>
+            Flash!
+        </button>
+    </div>
+</div>
+<div class="meter animate">
+    <span id="progress"><span></span></span>
+</div>
 
-    </select>
-
-
-    <button id="flash-button" disabled>
-        Flash!
-    </button>
-
-    <div id="progress"></div>
-
-    <footer><span id="status"></span></footer>
+<footer><span id="status"></span></footer>
 
 <!-- Javascript -->
 <script src="js/app.js" charset="utf-8"></script>
