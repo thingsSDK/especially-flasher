@@ -18,6 +18,7 @@ button {
 	padding: 10px 20px 10px 20px;
 	text-decoration: none;
 	border:0;
+    width: 100%;
 }
 
 button:disabled {
@@ -36,10 +37,8 @@ button:hover:disabled {
     color: #aaa
 }
 
-
-
 label {
-	width: 215px;
+	width: 180px;
 	display: inline-block;
 }
 
@@ -63,24 +62,28 @@ footer span {
 	position: relative;
 }
 
+#progressBar {
+    display:none;
+}
+
 #progress {
 	width: 0;
 }
 
 #form div {
-	margin-bottom: 10px;
+	margin-bottom: 30px;
 	text-align: center;
 }
 #form label {
-	text-align: left;
+	text-align: right;
 }
 /*
 * https://css-tricks.com/examples/ProgressBars/
 */
 .meter {
-	height: 20px;  /* Can be anything */
+	height: 40px;  /* Can be anything */
 	position: relative;
-	margin: 60px 0 20px 0; /* Just for demo spacing */
+	margin: 40px 0 20px 0; /* Just for demo spacing */
 	background: #555;
 	border-radius: 25px;
 	padding: 10px;
@@ -145,6 +148,5 @@ footer span {
 
 .nostripes > span > span, .nostripes > span:after {
 	-webkit-animation: none;
-	-moz-animation: none;
 	background-image: none;
 }

@@ -36,7 +36,9 @@ const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = new PortSelect($("ports"));
 const manifestsSelect = $("manifests");
+const progressHolder = $("progressBar");
 const progressBar =  $("progress");
+const form = $("form");
 
 /************************
  * Utility Functions
@@ -98,6 +100,8 @@ serialScanner.on("error", onError);
  * Updates UI to say it's ready
  */
 function readyToFlash() {
+    progressHolder.style.display = "none";
+    form.style.display = "block";
     appStatus.textContent = "Ready";
     enableInputs();
 }
@@ -151,26 +155,27 @@ function getManifests() {
 }
 
 function flashWithManifest(manifest) {
+    form.style.display = "none";
+    progressHolder.style.display = "block";
     appStatus.textContent = `Flashing ${portsSelect.value}`;
     const numberOfSteps = manifest.flash.length * 2;
-    let currectStepNumber = 0;
+    let currectStepNumber = 1;
     prepareBinaries(manifest, (err, flashSpec) => {
         if(err) throw err;
 
         const esp = new RomComm({
             portName: portsSelect.value,
-            baudRate: 115200,
+            baudRate: 115200
         });
 
         esp.on('progress', (progress) => {
-            applicationCache.textContent = progress.display;
-            const progressPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100);
-            updateProgressBar(progressPercent);
+            appStatus.textContent = progress.display;
+            const progressPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 50);
+            updateProgressBar(50 + progressPercent);
         });
 
         esp.open().then((result) => {
-            appStatus.textContent = `Flashing ${portsSelect.value}...Opened Port.`;
-            updateProgressBar(0);
+            appStatus.textContent = `Flashing device connected to ${portsSelect.value}`;
             let promise = Promise.resolve();
             return esp.flashSpecifications(flashSpec)
                 .then(() => esp.close())
@@ -180,10 +185,13 @@ function flashWithManifest(manifest) {
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
+            new Notification("An error occured during flashing.");
+            readyToFlash();
             log.error("Oh noes!", error);
         });
     }).on("entry", (progress) => {
-        const percent = Math.round((currectStepNumber++/numberOfSteps) * 100);
+        //For the download progress. The other half is flashing.
+        const percent = Math.round((currectStepNumber++/numberOfSteps) * 50);
         updateProgressBar(percent);
         appStatus.textContent = progress.display;
     });

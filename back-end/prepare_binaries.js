@@ -27,7 +27,7 @@ function prepareBinaries(manifest, callback) {
                     display: `Extracting ${fileName}`,
                     stage: "start"
                 });
-            
+
                 let body;
                 entry.on("data", function(data){
                     if(body) {
@@ -47,7 +47,6 @@ function prepareBinaries(manifest, callback) {
                 entry.autodrain();
             }
         }).on("close", () => {
-            console.log("close");
             callback(null, flashContents);
         });
         response.on("error", callback);
