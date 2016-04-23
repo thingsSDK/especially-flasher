@@ -169,9 +169,12 @@ function flashWithManifest(manifest) {
         });
 
         esp.on('progress', (progress) => {
-            appStatus.textContent = progress.display;
-            const progressPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 50);
-            updateProgressBar(50 + progressPercent);
+            const flashPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100);
+            const processSoFar = 50; //From download and extracting.
+            const flashProcess = flashPercent / 2; //To add to the overall progress
+            updateProgressBar(processSoFar + flashProcess);
+            appStatus.textContent = `${progress.display} - ${flashPercent}%`;
+
         });
 
         esp.open().then((result) => {
@@ -190,9 +193,9 @@ function flashWithManifest(manifest) {
             log.error("Oh noes!", error);
         });
     }).on("entry", (progress) => {
-        //For the download progress. The other half is flashing.
-        const percent = Math.round((currectStepNumber++/numberOfSteps) * 50);
-        updateProgressBar(percent);
+        //For the download/extract progress. The other half is flashing.
+        const extractPercent = Math.round((currectStepNumber++/numberOfSteps) * 50);
+        updateProgressBar(extractPercent);
         appStatus.textContent = progress.display;
     });
 }
