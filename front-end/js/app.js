@@ -20,12 +20,12 @@ var last_notification = "";
  * Note: Paths are relative to index.html not app.js
  ************************/
 
+const remote = require("remote");
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
 const prepareBinaries = require("../back-end/prepare_binaries");
 const log = require("../back-end/logger");
 const RomComm = require("../back-end/rom_comm");
-
 const serialScanner = new SerialScanner();
 
 /************************
@@ -147,11 +147,14 @@ function generateManifestList(manifestsJSON) {
 
 function getManifests() {
     appStatus.textContent = "Getting latest manifests.";
-    fetch(CONSTANTS.manifestList)
-        .then(processJSON)
-        .then(generateManifestList).catch(error => {
-            setTimeout(getManifests, pollTime);
-        });
+    // Break the cache to get the latest
+    remote.getCurrentWindow().webContents.session.clearCache(() => {
+        fetch(CONSTANTS.manifestList)
+            .then(processJSON)
+            .then(generateManifestList).catch(error => {
+                setTimeout(getManifests, pollTime);
+            });
+    });
 }
 
 function flashWithManifest(manifest) {
