@@ -2,4 +2,4 @@
 
 const bunyan = require("bunyan");
 
-module.exports = bunyan.createLogger({name: "especially-flasher"});
+module.exports = bunyan.createLogger({name: "flasher.js"});

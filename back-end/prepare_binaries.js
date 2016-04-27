@@ -1,5 +1,5 @@
 "use strict";
-const http = require("http");
+const request = require("request");
 const unzip = require("unzip");
 const fs = require("fs");
 const EventEmitter = require("events");
@@ -19,8 +19,9 @@ function addBufferToBinary(flashSpecification, fileName, buffer) {
 function prepareBinaries(manifest, callback) {
     const eventEmitter = new EventEmitter();
     const flashContents = manifest.flash;
-    const downloadRequest = http.get(manifest.download, (response) => {
-        response.pipe(unzip.Parse()).on('entry', (entry) => {
+    const downloadRequest = request(manifest.download)
+        .pipe(unzip.Parse())
+        .on('entry', (entry) => {
             const fileName = entry.path;
             if (isBinaryFileRequired(flashContents, fileName)) {
                 eventEmitter.emit("entry", {
@@ -42,15 +43,12 @@ function prepareBinaries(manifest, callback) {
                     });
                     addBufferToBinary(flashContents, fileName, body);
                 }).on("error", callback);
-
             } else {
                 entry.autodrain();
             }
         }).on("close", () => {
             callback(null, flashContents);
         });
-        response.on("error", callback);
-    });
     return eventEmitter;
 }
 
