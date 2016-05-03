@@ -106,14 +106,14 @@ class RomComm extends EventEmitter {
         if (data.length < 8) {
             log.error("Missing header");
             // Not throwing error, let it fall through
-            return;
+            return false;
         }
         let headerBytes = data.slice(0, 8);
         let header = this.headerPacketFrom(headerBytes);
         if (header.direction != 0x01) {
             log.error("Invaid direction", header.direction);
             // Again, intentionally not throwing error, it will communicate correctly eventually
-            return;
+            return false;
         }
         let commandName = commandToKey(header.command);
         let body = data.slice(8, 8 + header.size);
@@ -126,6 +126,7 @@ class RomComm extends EventEmitter {
         }
         log.info("Emitting", commandName, body);
         this.emit("RECEIVED-" + commandName, body);
+        return true;
     }
 
     /**
@@ -202,7 +203,7 @@ class RomComm extends EventEmitter {
                             reject(error);
                         }
                         log.info("Port flushed");
-                        
+
                         resolve();
                     });
             }).then(() => this.sync(true));
