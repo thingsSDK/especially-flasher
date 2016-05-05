@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "electron index.js",
+    "rebuild": "electron-rebuild",
     "test": "mocha"
   },
   "repository": {
@@ -35,6 +36,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "electron-prebuilt": "^0.36.9",
+    "electron-rebuild": "^1.1.3",
     "mocha": "^2.4.5"
   }
 }

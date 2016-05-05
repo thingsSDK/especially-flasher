@@ -12,8 +12,25 @@ EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
 ## Run the GUI
 
+### OS X
+
 ```bash
 npm install
+npm start
+```
+
+### Windows 10
+
+You'll need installed:
+
+* Visual Studio Community Edition (or better) installed with Windows 8/8.1 SDK.
+* Python 2.7
+
+```
+npm install
+del node_modules\serialport\build\Release\serialport.node
+del node_modules\nslog\build\Release\nslog.node
+npm run rebuild
 npm start
 ```
 
