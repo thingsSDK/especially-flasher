@@ -8,9 +8,10 @@ class SerialScanner extends EventEmitter {
      * Scans for ports and emits a "ports" event with an array of
      */
     scan() {
+        this.ports = []; //Initialize array        
         serialport.list(
             (err, ports) => {
-                this._listWithCallback(err,ports, () => {
+                this._listWithCallback(err, ports, () => {
                     this.ports = ports.map(this._portMap);
                     this.emit("ports", this.ports);
                 });
@@ -61,7 +62,7 @@ class SerialScanner extends EventEmitter {
      * @param event
      * @private
      */
-    _comparePortsWithEmittion(arrayA,arrayB, event) {
+    _comparePortsWithEmittion(arrayA, arrayB, event) {
         arrayA.forEach((port) => {
             if(arrayB.indexOf(port) === -1) {
                 this.emit(event, port);

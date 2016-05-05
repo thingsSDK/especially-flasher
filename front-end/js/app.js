@@ -86,6 +86,7 @@ flashButton.addEventListener("click", (event) => {
 
 serialScanner.on("deviceAdded", (port) => {
     portsSelect.add(port);
+    readyToFlash();
     new Notification(`Added: ${port}!`);
 });
 
@@ -100,6 +101,7 @@ serialScanner.on("error", onError);
  * Updates UI to say it's ready
  */
 function readyToFlash() {
+    updateProgressBar(0);
     progressHolder.style.display = "none";
     form.style.display = "block";
     appStatus.textContent = "Ready";
