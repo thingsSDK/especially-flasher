@@ -81,7 +81,6 @@ We are using [Bunyan](https://github.com/trentm/node-bunyan) for logging, make s
 ## Contributing
 
 We would love your contributions! Check out the [contribution guidelines](CONTRIBUTING.md).
-```
 
 -------
 
