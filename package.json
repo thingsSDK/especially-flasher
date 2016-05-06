@@ -20,6 +20,12 @@
     "flasher"
   ],
   "author": "Andrew Chalkley <andrew@chalkley.org>",
+  "contributors": [
+    {
+      "name": "Craig Dennis",
+      "email": "craigsdennis@gmail.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/thingsSDK/flasher.js/issues"
