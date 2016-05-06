@@ -80,14 +80,10 @@ We are using [Bunyan](https://github.com/trentm/node-bunyan) for logging, make s
 
 ## Contributing
 
-If you want to contribute to the Flasher.js clone this repo and
- run the following commands.
+We would love your contributions! Check out the [contribution guidelines](CONTRIBUTING.md).
 
-```bash
-npm install
-npm start
-```
+-------
 
-## Licence 
+## License 
 
-Flasher.js is released under the [MIT Licence](https://opensource.org/licenses/MIT)
+Flasher.js is released under the [MIT License](https://opensource.org/licenses/MIT)
