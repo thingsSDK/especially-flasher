@@ -154,8 +154,8 @@ function getManifests() {
         fetch(CONSTANTS.manifestList)
             .then(processJSON)
             .then(generateManifestList).catch(error => {
-                setTimeout(getManifests, pollTime);
-            });
+                setTimeout(getManifests, CONSTANTS.pollTime);
+            });S
     });
 }
 
