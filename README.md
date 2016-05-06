@@ -10,7 +10,7 @@ EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
 -------
 
-## Run the GUI
+## Run the GUI in Development
 
 ### OS X
 
@@ -87,3 +87,7 @@ If you want to contribute to the Flasher.js clone this repo and
 npm install
 npm start
 ```
+
+## Licence 
+
+Flasher.js is released under the [MIT Licence](https://opensource.org/licenses/MIT)
