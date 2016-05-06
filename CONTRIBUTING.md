@@ -2,7 +2,7 @@
 
 ### Setup
 
-First, set up your development environment using the same instructions on the [Readme](https://github.com/thingssdk/flasher.js/blob/master/README.md).
+First, set up your development environment using the same instructions on the [Readme](README.md).
 
 ### Testing
 
