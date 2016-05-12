@@ -8,6 +8,25 @@ Windows, Mac OS X and Linux.
 This tool flashes (installs) the Espruino JavaScript run time on ESP8266
 EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
+-----
+
+## Application Compatibility 
+
+|OS|Status|
+|---|:-----:|
+|Windows 10| Tested |
+|Windows 8.1| Tested |
+|Ubuntu 14.04 LTS|Tested|
+|Mac OS X 10.11|Tested|
+
+
+## Device Compatibility
+
+|Board|Status|Notes|
+|---|:-----:|-------|
+|[Adafruit Feather HUZZAH](https://www.adafruit.com/products/2821)|Tested|May require [driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) installation. Automatically resets to bootloader mode on firmware upload.|
+|[Adafruit HUZZAH](https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout)|Tested|Requires [FTDI](https://www.adafruit.com/products/70) cable. To put device in to bootloader mode, hold `GPIO0` button while inserting USB in to your computer.|
+
 -------
 
 ## Run the GUI in Development
@@ -43,39 +62,6 @@ rm node_modules/nslog/build/Release/nslog.node
 npm run rebuild
 sudo npm start
 ```
--------
-
-## ROM Communication
-
-The ESP8266 is notoriously finicky about being flashed, we've done our best to abstract that for you.
-
-Here is an example of flashing the ESP8266 with the latest Espruino build.
-
-```javascript
-const log = require("./logger");
-
-const esp = new RomComm({
-    portName: "/dev/cu.SLAB_USBtoUART",
-    baudRate: 115200
-});
-
-esp.open().then((result) => {
-    log.info("ESP is open", result);
-    esp.flashAddressFromFile(0x0000, "/path/to/binaries/boot_v1.4(b1).bin")
-        .then(() => esp.flashAddressFromFile(0x1000, "/path/to/binaries/espruino_esp8266_user1.bin"))
-        .then(() => esp.flashAddressFromFile(0x3FC000, "/path/to/binaries/esp_init_data_default.bin"))
-        .then(() => esp.flashAddressFromFile(0x3FE000, "/path/to/binaries/blank.bin"))
-        .then(() => esp.close())
-        .then((result) => log.info("Flashed to latest Espruino build!", result));
-}).catch((error) => {
-    log.error("Oh noes!", error);
-});
-```
-
-See also `RomComm.flashAddress` for passing just a buffer representation of the file.
-
-We are using [Bunyan](https://github.com/trentm/node-bunyan) for logging, make sure to pipe it through the parser.
-
 -------
 
 ## Contributing
