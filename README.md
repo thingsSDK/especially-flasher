@@ -24,8 +24,8 @@ EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
 |Board|Status|Notes|
 |---|:-----:|-------|
-|[Adafruit Feather HUZZAH](https://www.adafruit.com/products/2821)|Tested|May require [driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) installation.|
-|[Adafruit HUZZAH](https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout)|Tested|Requires [FTDI](https://www.adafruit.com/products/70) cable.|
+|[Adafruit Feather HUZZAH](https://www.adafruit.com/products/2821)|Tested|May require [driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) installation. Automatically resets to bootloader mode on firmware upload.|
+|[Adafruit HUZZAH](https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout)|Tested|Requires [FTDI](https://www.adafruit.com/products/70) cable. To put device in to bootloader mode, hold `GPIO0` button while inserting USB in to your computer.|
 
 -------
 
