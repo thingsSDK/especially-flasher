@@ -8,6 +8,25 @@ Windows, Mac OS X and Linux.
 This tool flashes (installs) the Espruino JavaScript run time on ESP8266
 EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
+-----
+
+## Application Compatibility 
+
+|OS|Status|
+|---|:-----:|
+|Windows 10| Tested |
+|Windows 8.1| Tested |
+|Ubuntu 14.04 LTS|Tested|
+|Mac OS X 10.11|Tested|
+
+
+## Device Compatibility
+
+|Board|Status|Notes|
+|---|:-----:|-------|
+|[Adafruit Feather HUZZAH](https://www.adafruit.com/products/2821)|Tested|May require [driver](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx) installation.|
+|[Adafruit HUZZAH](https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout)|Tested|Requires [FTDI](https://www.adafruit.com/products/70) cable.|
+
 -------
 
 ## Run the GUI in Development
