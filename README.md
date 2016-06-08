@@ -1,6 +1,8 @@
 # Flasher.js
 [![Build Status](https://api.travis-ci.org/thingsSDK/flasher.js.svg)](https://travis-ci.org/thingsSDK/flasher.js)
 
+![](https://raw.githubusercontent.com/thingsSDK/flasher.js/new-ui/front-end/images/logo.svg)
+
 _Flasher.js_ is a tool to get JavaScript running natively on
 the Internet of Things device, ESP8266. This application runs on
 Windows, Mac OS X and Linux.
