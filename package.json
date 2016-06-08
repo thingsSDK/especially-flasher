@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron index.js",
     "rebuild": "electron-rebuild",
-    "build": "electron-packager . --all --overwite --out=out --ignore=node_modules/electron-* && cp resources/icon.icns out/flasher.js-darwin-x64/flasher.js.app/Contents/Resources/atom.icns",
+    "build": "electron-packager . --all --overwrite --icon=resources/icon.ico --out=out --ignore=node_modules/electron-* && cp resources/icon.icns out/flasher.js-darwin-x64/flasher.js.app/Contents/Resources/atom.icns",
     "test": "mocha"
   },
   "repository": {
