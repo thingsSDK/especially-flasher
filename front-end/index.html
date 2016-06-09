@@ -6,26 +6,31 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <img src="images/logo.svg" width="180" height="180">
-    <div id="form">
-        <div>
-            <label for="ports">Select Port:</label><br>
-            <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
-
-            </select>
+    <div id="app">
+        <div id="logo">
+            <img src="images/logo.svg">
         </div>
-        <div>
-            <label for="manifests">Select Binaries to Flash:</label><br>
-            <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
+        <div id="form">
+            <div class="field">
+                <label for="ports">Select Port:</label><br>
+                <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
 
-            </select>
-        </div>
-        <div>
-            <button id="flash-button" disabled>
-                Flash!
-            </button>
+                </select>
+            </div>
+            <div class="field">
+                <label for="manifests">Select Binaries to Flash:</label><br>
+                <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
+
+                </select>
+            </div>
+            <div class="button">
+                <button id="flash-button" disabled>
+                    Flash!
+                </button>
+            </div>
         </div>
     </div>
+
     <div id="progressBar" class="meter animate">
         <span id="progress"><span></span></span>
     </div>

@@ -8,7 +8,6 @@ html {
 }
 
 body {
-	padding: 50px;
 	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 	font-family: HelveticaNeue;
 	color: #010101;
@@ -51,11 +50,26 @@ footer {
 	border-top: 1px solid #EDEAE8;
 }
 
-img {
-	width: 180px;
-	display: inline-block;
+#app {
+	margin:37px auto;
+	display: flex;
+	background: white;
+	width: 500px;
 }
-#form {
-	display: inline-block;
-	width: 300px;
+
+#logo img {
+	width:180px;
 }
+
+#form .field {
+	margin-top:20px;
+	line-height: 1.5;
+}
+
+#form .button {
+	margin-top: 10px;
+	text-align: right;
+}
+
+
+

@@ -103,7 +103,7 @@ serialScanner.on("error", onError);
 function readyToFlash() {
     updateProgressBar(0);
     progressHolder.style.display = "none";
-    form.style.display = "block";
+    //form.style.display = "block";
     appStatus.textContent = "Ready";
     enableInputs();
 }
@@ -161,7 +161,7 @@ function getManifests() {
 
 function flashWithManifest(manifest) {
     form.style.display = "none";
-    progressHolder.style.display = "block";
+   // progressHolder.style.display = "block";
     appStatus.textContent = `Flashing ${portsSelect.value}`;
     const numberOfSteps = manifest.flash.length * 2;
     let correctStepNumber = 1;
