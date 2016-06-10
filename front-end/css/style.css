@@ -28,7 +28,7 @@ button {
 
 button:disabled {
 	background: #eee;
-	color: #aaa;	
+	color: #aaa;
 }
 
 button:hover {
