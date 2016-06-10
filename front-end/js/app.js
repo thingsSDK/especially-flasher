@@ -64,8 +64,6 @@ function processJSON(response) {
     return response.json();
 }
 
-
-
 /************************
  * Handle UI
 ************************/
