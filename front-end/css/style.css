@@ -26,6 +26,16 @@ button {
 	border: 0.5px solid #247EFF;
 }
 
+button:disabled {
+	background: #eee;
+	color: #aaa;	
+}
+
+button:hover {
+	background-image: linear-gradient(-180deg, #5DA9FF 0%, #1775F4 100%);
+	box-shadow: 0px 0px 2px 0px rgba(0,0,0,0.5);
+}
+
 select {
 	width: 254px;
 	height: 21px;
