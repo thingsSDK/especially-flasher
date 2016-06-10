@@ -14,12 +14,9 @@ body {
 }
 
 button {
-	/* Background: */
 	background-image: linear-gradient(-180deg, #4C98FE 0%, #0664E3 100%);
-	/* Sketch doesnt export gradient borders at this point */
 	box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.15);
 	border-radius: 3px;
-	/* Button: */
 	font-size: 14px;
 	color: #FFFFFF;
 	letter-spacing: -0.11px;
@@ -48,6 +45,7 @@ footer {
 	width:100%;
 	text-align: center;
 	border-top: 1px solid #EDEAE8;
+	background: white;
 }
 
 #app {
@@ -71,5 +69,31 @@ footer {
 	text-align: right;
 }
 
+@keyframes moveLeft {
+    0%   {margin-left: 0px;}
+    100% {margin-left: 160px;}
+}
 
+@keyframes moveBack {
+    0%   {margin-left: 160px;}
+    100% {margin-left: 0px;}
+}
+
+#app.flashing #logo {
+	animation: moveLeft 500ms ease-in;
+	margin-left: 160px;
+}
+
+#app.flashing #form {
+	display: none;
+}
+
+#app.finished #logo {
+	animation: moveBack 500ms ease-in;
+	margin-left: 0px;
+}
+
+#app.finished #form {
+	display: inline-block;
+}
 

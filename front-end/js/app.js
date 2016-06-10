@@ -103,7 +103,6 @@ serialScanner.on("error", onError);
  * Updates UI to say it's ready
  */
 function readyToFlash() {
-    form.style.opacity = 1;
     appStatus.textContent = "Ready";
     enableInputs();
 }
@@ -188,6 +187,7 @@ function flashWithManifest(manifest) {
                 .then((result) => {
                     new Notification("Flash Finished!");
                     readyToFlash();
+                    restoreUI();
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
@@ -256,31 +256,27 @@ function updateProgressBar(percent, svg){
 }
 
 function prepareUIForFlashing(callback) {
-    let marginLeft = 0;
-    let incrementor = 0.01;
     let percent = 100;
-
-    let centerLeft = (appWrapper.clientWidth - logoWrapper.clientWidth) / 2;
+    appWrapper.classList.remove("finished");
+    appWrapper.classList.add("flashing");
     
-    let interval = setInterval(() => {
-        incrementor += 0.015;
-        marginLeft += 1.5 / incrementor;
-        if(marginLeft <= centerLeft) {
-            logoWrapper.style.marginLeft = marginLeft + "px";
-        } else {
-            clearInterval(interval);
-        }
-    }, 10);
-
     let percentInterval = setInterval(() => {
         percent -= 1;
-        form.style.opacity = percent / 100;
         updateProgressBar(percent, svg);
         if(percent === 0) {
             clearInterval(percentInterval);
-            callback();
+            if(callback) callback();
         }
     }, 1);
+}
+
+function restoreUI(callback) {
+    let percent = 0;
+    appWrapper.classList.remove("flashing");
+    appWrapper.classList.add("finished");
+
+    updateProgressBar(100, svg);
+    if(callback) callback();
 }
 
 /**
