@@ -8,8 +8,8 @@ html {
 }
 
 body {
-	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-	font-family: HelveticaNeue;
+	font-size: 14px;
+	font-family: HelveticaNeue, "Lucida Grande", Helvetica, Arial, sans-serif;
 	color: #010101;
 }
 
