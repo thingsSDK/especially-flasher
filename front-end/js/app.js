@@ -37,6 +37,8 @@ const appStatus = $("status");
 const portsSelect = new PortSelect($("ports"));
 const manifestsSelect = $("manifests");
 const svg = $("Layer_1");
+const appWrapper = $("app");
+const logoWrapper = $("logo");
 
 const form = $("form");
 
@@ -70,9 +72,11 @@ function processJSON(response) {
 
 flashButton.addEventListener("click", (event) => {
     disableInputs();
-    fetch(manifestsSelect.value)
-        .then(processJSON)
-        .then(flashWithManifest);
+    prepareUIForFlashing(()=>{
+        fetch(manifestsSelect.value)
+            .then(processJSON)
+            .then(flashWithManifest);
+    });
 });
 
 /************************
@@ -101,7 +105,7 @@ serialScanner.on("error", onError);
  * Updates UI to say it's ready
  */
 function readyToFlash() {
-    form.style.display = "block";
+    form.style.opacity = 1;
     appStatus.textContent = "Ready";
     enableInputs();
 }
@@ -158,7 +162,6 @@ function getManifests() {
 }
 
 function flashWithManifest(manifest) {
-    form.style.display = "none";
     appStatus.textContent = `Flashing ${portsSelect.value}`;
     const numberOfSteps = manifest.flash.length * 2;
     let correctStepNumber = 1;
@@ -252,6 +255,34 @@ function updateProgressBar(percent, svg){
             line.points.appendItem(newPoint);
         }
     }
+}
+
+function prepareUIForFlashing(callback) {
+    let marginLeft = 0;
+    let incrementor = 0.01;
+    let percent = 100;
+
+    let centerLeft = (appWrapper.clientWidth - logoWrapper.clientWidth) / 2;
+    
+    let interval = setInterval(() => {
+        incrementor += 0.015;
+        marginLeft += 1.5 / incrementor;
+        if(marginLeft <= centerLeft) {
+            logoWrapper.style.marginLeft = marginLeft + "px";
+        } else {
+            clearInterval(interval);
+        }
+    }, 10);
+
+    let percentInterval = setInterval(() => {
+        percent -= 1;
+        form.style.opacity = percent / 100;
+        updateProgressBar(percent, svg);
+        if(percent === 0) {
+            clearInterval(percentInterval);
+            callback();
+        }
+    }, 1);
 }
 
 /**
