@@ -271,10 +271,8 @@ function prepareUIForFlashing(callback) {
 }
 
 function restoreUI(callback) {
-    let percent = 0;
     appWrapper.classList.remove("flashing");
     appWrapper.classList.add("finished");
-
     updateProgressBar(100, svg);
     if(callback) callback();
 }
