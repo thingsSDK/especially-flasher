@@ -94,6 +94,7 @@ serialScanner.on("deviceAdded", (port) => {
 });
 
 serialScanner.on("deviceRemoved", (port) => {
+    portsSelect.remove(port);
     new Notification(`Removed: ${port}!`);
 });
 
