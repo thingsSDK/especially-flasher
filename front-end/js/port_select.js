@@ -69,6 +69,10 @@ class PortSelect {
     get value() {
         return this.selectElement.value;
     }
+
+    get children() {
+        return this.selectElement.children;
+    }
 };
 
 module.exports = PortSelect;

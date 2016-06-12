@@ -13,6 +13,8 @@ const CONSTANTS = {
     pollTime: 1000
 };
 
+var isFlashing = false;
+
 var last_notification = "";
 
 /************************
@@ -69,6 +71,7 @@ function processJSON(response) {
 ************************/
 
 flashButton.addEventListener("click", (event) => {
+    isFlashing = true;
     disableInputs();
     prepareUIForFlashing(()=>{
         fetch(manifestsSelect.value)
@@ -83,21 +86,26 @@ flashButton.addEventListener("click", (event) => {
 
  serialScanner.on("ports", (ports) => {
     portsSelect.addAll(ports);
-    readyToFlash();
 });
 
 serialScanner.on("deviceAdded", (port) => {
     portsSelect.add(port);
-    readyToFlash();
     new Notification(`Added: ${port}!`);
 });
 
 serialScanner.on("deviceRemoved", (port) => {
-    portsSelect.remove(port);
+    console.log(port);
     new Notification(`Removed: ${port}!`);
 });
 
-serialScanner.on("error", onError);
+serialScanner.on("error", (err) => {
+    if(err.message === "No serial ports detected.") {
+        if(portsSelect.children[0]) {
+            portsSelect.remove(portsSelect.children[0].textContent);
+        }
+    }
+    onError(err);
+});
 
 /**
  * Updates UI to say it's ready
@@ -186,13 +194,13 @@ function flashWithManifest(manifest) {
                 .then(() => esp.close())
                 .then((result) => {
                     new Notification("Flash Finished!");
-                    readyToFlash();
+                    isFlashing = false;
                     restoreUI();
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
             new Notification("An error occured during flashing.");
-            readyToFlash();
+            isFlashing = false;
             log.error("Oh noes!", error);
         });
     }).on("entry", (progress) => {
@@ -277,6 +285,18 @@ function restoreUI(callback) {
     if(callback) callback();
 }
 
+function inputStateManager() {
+    if(!isFlashing) {
+        if( manifestsSelect.children.length > 0 && portsSelect.children.length > 0 ) {
+            readyToFlash();
+        } else {
+            disableInputs();
+        }
+    } else {
+        disableInputs();
+    }
+}
+
 /**
  * Get's manifest list for possibilities for flashing,
  * scans serial ports and sets up timer for checking for changes.
@@ -284,6 +304,7 @@ function restoreUI(callback) {
 function start() {
     getManifests();
     serialScanner.scan();
+    setInterval(inputStateManager, 10);
     setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
 }
 
