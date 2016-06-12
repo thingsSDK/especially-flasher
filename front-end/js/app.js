@@ -36,8 +36,10 @@ const flashButton = $("flash-button");
 const appStatus = $("status");
 const portsSelect = new PortSelect($("ports"));
 const manifestsSelect = $("manifests");
-const progressHolder = $("progressBar");
-const progressBar =  $("progress");
+const svg = $("Layer_1");
+const appWrapper = $("app");
+const logoWrapper = $("logo");
+
 const form = $("form");
 
 /************************
@@ -62,17 +64,17 @@ function processJSON(response) {
     return response.json();
 }
 
-
-
 /************************
  * Handle UI
 ************************/
 
 flashButton.addEventListener("click", (event) => {
     disableInputs();
-    fetch(manifestsSelect.value)
-        .then(processJSON)
-        .then(flashWithManifest);
+    prepareUIForFlashing(()=>{
+        fetch(manifestsSelect.value)
+            .then(processJSON)
+            .then(flashWithManifest);
+    });
 });
 
 /************************
@@ -101,9 +103,6 @@ serialScanner.on("error", onError);
  * Updates UI to say it's ready
  */
 function readyToFlash() {
-    updateProgressBar(0);
-    progressHolder.style.display = "none";
-    form.style.display = "block";
     appStatus.textContent = "Ready";
     enableInputs();
 }
@@ -160,8 +159,6 @@ function getManifests() {
 }
 
 function flashWithManifest(manifest) {
-    form.style.display = "none";
-    progressHolder.style.display = "block";
     appStatus.textContent = `Flashing ${portsSelect.value}`;
     const numberOfSteps = manifest.flash.length * 2;
     let correctStepNumber = 1;
@@ -177,7 +174,7 @@ function flashWithManifest(manifest) {
             const flashPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100);
             const processSoFar = 50; //From download and extracting.
             const flashProcess = flashPercent / 2; //To add to the overall progress
-            updateProgressBar(processSoFar + flashProcess);
+            updateProgressBar(processSoFar + flashProcess, svg);
             appStatus.textContent = `${progress.display} - ${flashPercent}%`;
 
         });
@@ -190,6 +187,7 @@ function flashWithManifest(manifest) {
                 .then((result) => {
                     new Notification("Flash Finished!");
                     readyToFlash();
+                    restoreUI();
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
@@ -200,13 +198,83 @@ function flashWithManifest(manifest) {
     }).on("entry", (progress) => {
         //For the download/extract progress. The other half is flashing.
         const extractPercent = Math.round((correctStepNumber++/numberOfSteps) * 50);
-        updateProgressBar(extractPercent);
+        updateProgressBar(extractPercent, svg);
         appStatus.textContent = progress.display;
     });
 }
 
-function updateProgressBar(percent) {
-    progressBar.style.width = `${percent}%`;
+function cloneSVGNode(node) {
+    return node.cloneNode(true);
+}
+
+function updateClass(node) {
+    node.setAttribute("class", "bg");
+    return node;
+}
+
+function updateProgressBar(percent, svg){
+    const line = svg.getElementsByClassName("st0")[0];
+    const startDot = svg.getElementsByClassName("st1")[0];
+    const finishDot = svg.getElementsByClassName("st2")[0];
+
+    let backgroundElements = svg.getElementsByClassName("bg");
+
+    if(backgroundElements.length === 0) {
+        const g = svg.getElementsByTagName("g")[0];
+        backgroundElements = [line, startDot, finishDot]
+                                    .map(cloneSVGNode)
+                                    .map(updateClass);
+
+        backgroundElements.forEach(node => g.insertBefore(node, line));
+    }
+
+    const bgLine = backgroundElements[0];
+
+    line.points.clear();
+    
+    if( percent < 1 ) {
+        startDot.style.opacity = 0;
+    } else {
+        startDot.style.opacity = 1;
+    }
+
+    if( percent > 99 ) {
+        finishDot.style.opacity = 1;
+    } else {
+        finishDot.style.opacity = 0;
+    }
+
+    for(var i = 0; i < percent * (bgLine.points.numberOfItems / 100); i ++) {
+        if(i < bgLine.points.numberOfItems) {
+            const point = bgLine.points.getItem(i);
+            const newPoint = svg.createSVGPoint();
+	        newPoint.x = point.x;
+            newPoint.y = point.y;
+            line.points.appendItem(newPoint);
+        }
+    }
+}
+
+function prepareUIForFlashing(callback) {
+    let percent = 100;
+    appWrapper.classList.remove("finished");
+    appWrapper.classList.add("flashing");
+    
+    let percentInterval = setInterval(() => {
+        percent -= 1;
+        updateProgressBar(percent, svg);
+        if(percent === 0) {
+            clearInterval(percentInterval);
+            if(callback) callback();
+        }
+    }, 1);
+}
+
+function restoreUI(callback) {
+    appWrapper.classList.remove("flashing");
+    appWrapper.classList.add("finished");
+    updateProgressBar(100, svg);
+    if(callback) callback();
 }
 
 /**
