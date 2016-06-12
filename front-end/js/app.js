@@ -94,7 +94,6 @@ serialScanner.on("deviceAdded", (port) => {
 });
 
 serialScanner.on("deviceRemoved", (port) => {
-    console.log(port);
     new Notification(`Removed: ${port}!`);
 });
 
@@ -304,7 +303,7 @@ function inputStateManager() {
 function start() {
     getManifests();
     serialScanner.scan();
-    setInterval(inputStateManager, 10);
+    setInterval(inputStateManager, 100);
     setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
 }
 
