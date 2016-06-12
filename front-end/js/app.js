@@ -94,6 +94,7 @@ serialScanner.on("deviceAdded", (port) => {
 });
 
 serialScanner.on("deviceRemoved", (port) => {
+    portsSelect.remove(port);
     new Notification(`Removed: ${port}!`);
 });
 
@@ -202,16 +203,22 @@ function flashWithManifest(manifest) {
                     log.info("Flashed to latest Espruino build!", result);
                 });
         }).catch((error) => {
+            esp.close();
             new Notification("An error occured during flashing.");
             isFlashing = false;
             log.error("Oh noes!", error);
+            restoreUI();
         });
-    }).on("entry", (progress) => {
+    })
+    .on("error", onError)
+    .on("entry", (progress) => {
         //For the download/extract progress. The other half is flashing.
         const extractPercent = Math.round((correctStepNumber++/numberOfSteps) * 50);
         updateProgressBar(extractPercent, svg);
         appStatus.textContent = progress.display;
     });
+    
+    
 }
 
 function cloneSVGNode(node) {
