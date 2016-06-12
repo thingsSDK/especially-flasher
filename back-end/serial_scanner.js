@@ -84,6 +84,7 @@ class SerialScanner extends EventEmitter {
             this._emitError(err);
         }
         else if(ports.length === 0) {
+            this.ports = [];
             this._emitError(new Error("No serial ports detected."));
         }
         else {

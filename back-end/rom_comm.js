@@ -83,7 +83,7 @@ class RomComm extends EventEmitter {
     }
 
     bindPort() {
-        this._port.on('error', error => log.error("PORT ERROR", error));
+        this._port.on('error', (error) => log.error("PORT ERROR", error));
         this.in = new slip.SlipDecoder();
         this.out = new slip.SlipEncoder();
         this._port.pipe(this.in);
