@@ -6,32 +6,55 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="form">
-    <div>
-        <label for="ports">Select Port:</label>
-        <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
+    <div id="app">
+        <div id="logo">
+            <svg version="1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     viewBox="0 0 180 180" style="enable-background:new 0 0 180 180;" xml:space="preserve">
+        <style type="text/css">
+            .st0{fill:none;stroke:url(#SVGID_1_);stroke-width:3;stroke-miterlimit:10;}
+            .st1{fill:none;stroke:#FFAB91;stroke-width:3;stroke-miterlimit:10;}
+            .st2{fill:none;stroke:#FFD600;stroke-width:3;stroke-miterlimit:10;}
+            .bg{fill:none;stroke:#EEEEEE;stroke-width:3;stroke-miterlimit:10;}
+        </style>
+        <g>
+            <title>Flasherjs</title>
 
-        </select>
+        <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="49" y1="145" x2="128" y2="145" gradientTransform="matrix(1 0 0 1 0 -55)">
+            <stop  offset="0" style="stop-color:#FFAB91"/>
+            <stop  offset="1" style="stop-color:#FFD600"/>
+        </linearGradient>
+
+        <polyline class="st0" points="52,28 63,28 51,93 57,93 72,4 78,4 62,93 68,93 78,38 84,38
+        73,93 79,93 86,55 91,55 69,176 75,176 91,88 97,88 85,154 90,154 102,88 108,88
+        100,136 105,136 114,88 119,88 117,99 128,99"/>
+        <circle class="st1" cx="49" cy="28" r="3"/>
+        <circle class="st2" cx="131" cy="100" r="3"/>
+        </g>
+        </svg>
+        </div>
+        <div id="form">
+            <div class="field">
+                <label for="ports">Select Port:</label><br>
+                <select title="Select a Serial/COM Port" id="ports" name="ports" disabled>
+
+                </select>
+            </div>
+            <div class="field">
+                <label for="manifests">Select Binaries to Flash:</label><br>
+                <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
+
+                </select>
+            </div>
+            <div class="button">
+                <button id="flash-button" disabled>
+                    Flash!
+                </button>
+            </div>
+        </div>
     </div>
-    <div>
-        <label for="manifests">Select Binaries to Flash:</label>
-        <select title="Select Binaries to Flash" id="manifests" name="manifests" disabled>
-
-        </select>
-    </div>
-    <div>
-        <button id="flash-button" disabled>
-            Flash!
-        </button>
-    </div>
-</div>
-<div id="progressBar" class="meter animate">
-    <span id="progress"><span></span></span>
-</div>
-
-<footer><span id="status"></span></footer>
-
-<!-- Javascript -->
-<script src="js/app.js" charset="utf-8"></script>
+    
+    <footer><span id="status"></span></footer>
+    <!-- Javascript -->
+    <script src="js/app.js" charset="utf-8"></script>
 </body>
 </html>
