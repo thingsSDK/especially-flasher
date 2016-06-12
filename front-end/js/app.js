@@ -10,7 +10,7 @@
  */
 const CONSTANTS = {
     manifestList: "http://flasher.thingssdk.com/v1/manifest-list.json",
-    pollTime: 1000
+    pollTime: 100
 };
 
 var isFlashing = false;
@@ -303,8 +303,8 @@ function inputStateManager() {
 function start() {
     getManifests();
     serialScanner.scan();
-    setInterval(inputStateManager, 100);
     setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
+    setInterval(inputStateManager, CONSTANTS.pollTime);
 }
 
 /**
