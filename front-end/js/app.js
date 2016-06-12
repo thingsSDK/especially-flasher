@@ -10,7 +10,7 @@
  */
 const CONSTANTS = {
     manifestList: "http://flasher.thingssdk.com/v1/manifest-list.json",
-    pollTime: 100
+    pollTime: 1000
 };
 
 var isFlashing = false;
@@ -73,7 +73,7 @@ function processJSON(response) {
 flashButton.addEventListener("click", (event) => {
     isFlashing = true;
     disableInputs();
-    prepareUIForFlashing(()=>{
+    prepareUIForFlashing(() => {
         fetch(manifestsSelect.value)
             .then(processJSON)
             .then(flashWithManifest);
@@ -118,15 +118,19 @@ function readyToFlash() {
  * Enabled the serial port SELECT and flash BUTTON elements.
  */
 function enableInputs() {
-    portsSelect.disabled = false;
-    manifestsSelect.disabled = false;
-    flashButton.disabled = false;
+    if(flashButton.disabled) {
+        portsSelect.disabled = false;
+        manifestsSelect.disabled = false;
+        flashButton.disabled = false;
+    }
 }
 
 function disableInputs() {
-    portsSelect.disabled = true;
-    manifestsSelect.disabled = true;
-    flashButton.disabled = true;
+    if(!flashButton.disabled) {
+        portsSelect.disabled = true;
+        manifestsSelect.disabled = true;
+        flashButton.disabled = true;
+    }
 }
 
 /**
