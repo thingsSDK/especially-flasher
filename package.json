@@ -7,7 +7,8 @@
     "start": "electron index.js",
     "rebuild": "electron-rebuild",
     "sign-mac": "electron-osx-sign out/flasher.js-darwin-x64/flasher.js.app",
-    "build": "electron-packager . --all --overwrite --icon=resources/icon.ico --out=out --ignore=node_modules/electron-* && cp resources/icon.icns out/flasher.js-darwin-x64/flasher.js.app/Contents/Resources/atom.icns",
+    "pack-win": "electron-packager . flasher.js --asar  --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName='ThingsSDK' --version-string.FileDescription='Flasher.js' --version-string.ProductName='Flasher.js'",
+    "pack-mac": "electron-packager . --asar --overwrite --platform=darwin --arch=x64 --resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science'",
     "test": "mocha"
   },
   "repository": {
