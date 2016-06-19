@@ -19,7 +19,7 @@ function getInstallerConfig () {
   const outPath = path.join(rootPath, 'out')
 
   return Promise.resolve({
-    appDirectory: path.join(outPath, 'ElectronAPIDemos-win32-ia32'),
+    appDirectory: path.join(outPath, 'flasher.js-win32-x64'),
     iconUrl: 'https://raw.githubusercontent.com/thingssdk/flasher.js/resources/icon.ico',
     loadingGif: path.join(rootPath, 'resources', 'loading.gif'),
     noMsi: true,
