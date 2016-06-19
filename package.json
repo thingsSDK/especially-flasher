@@ -7,7 +7,7 @@
     "start": "electron index.js",
     "rebuild": "electron-rebuild",
     "sign-mac": "electron-osx-sign out/flasher.js-darwin-x64/flasher.js.app",
-    "pack-win": "electron-packager . flasher.js --asar  --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName='Andrew Chalkley' --version-string.FileDescription='Flasher.js' --version-string.ProductName='Flasher.js'",
+    "pack-win": "electron-packager . flasher.js --asar  --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
     "pack-mac": "electron-packager . --asar --overwrite --platform=darwin --arch=x64 --icon=resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science'",
     "installer-win": "node ./scripts/windows-installer.js",
     "test": "mocha"
@@ -37,6 +37,7 @@
   "homepage": "https://github.com/thingsSDK/flasher.js#readme",
   "dependencies": {
     "bunyan": "^1.8.0",
+    "electron-squirrel-startup": "^1.0.0",
     "node-binary": "^1.1.0",
     "request": "^2.72.0",
     "serialport": "^2.0.7-beta1",
@@ -49,7 +50,7 @@
     "electron-prebuilt": "^0.36.9",
     "electron-rebuild": "^1.1.3",
     "electron-osx-sign": "^0.4.0-beta4",
-    "electron-winstaller":  "^2.2.0",
+    "electron-winstaller": "^2.2.0",
     "mocha": "^2.4.5"
   }
 }
