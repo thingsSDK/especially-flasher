@@ -51,9 +51,7 @@ You'll need installed:
 
 ```
 npm install
-del node_modules\serialport\build\Release\serialport.node
-del node_modules\nslog\build\Release\nslog.node
-npm run rebuild
+npm run pre-rebuild && npm run rebuild
 npm start
 ```
 
@@ -61,9 +59,7 @@ npm start
 
 ```
 npm install
-rm node_modules/serialport/build/Release/serialport.node
-rm node_modules/nslog/build/Release/nslog.node
-npm run rebuild
+npm run pre-rebuild && npm run rebuild
 sudo npm start
 ```
 -------

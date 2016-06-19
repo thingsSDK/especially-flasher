@@ -2,9 +2,9 @@
 //Taken from Electron API Demos
 //https://github.com/electron/electron-api-demos/blob/master/script/installer.js
 
-const createWindowsInstaller = require('electron-winstaller').createWindowsInstaller
-const path = require('path')
-const rimraf = require('rimraf')
+const createWindowsInstaller = require('electron-winstaller').createWindowsInstaller;
+const path = require('path');
+const rimraf = require('rimraf');
 
 deleteOutputFolder()
   .then(getInstallerConfig)
@@ -27,13 +27,13 @@ function getInstallerConfig () {
     setupExe: 'FlasherjsSetup.exe',
     setupIcon: path.join(rootPath, 'resources', 'icon.ico'),
     skipUpdateIcon: true
-  })
+  });
 }
 
 function deleteOutputFolder () {
   return new Promise((resolve, reject) => {
     rimraf(path.join(__dirname, '..', 'out', 'windows-installer'), (error) => {
       error ? reject(error) : resolve()
-    })
-  })
+    });
+  });
 }
