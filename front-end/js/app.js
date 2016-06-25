@@ -176,7 +176,11 @@ function updateProgressUI(percent, display) {
 function flashWithManifest(manifest) {
     appStatus.textContent = `Flashing ${portsSelect.value}`;
     prepareBinaries(manifest)
-    .on("error", onError)
+    .on("error", err => {
+        isFlashing = false;
+        onError(err);
+        restoreUI();
+    })
     .on("progress", progress => {
         //For the download/extract progress.
         updateProgressUI(progress.details.downloadedBytes / progress.details.downloadSize, progress.display);
@@ -202,11 +206,11 @@ function flashWithManifest(manifest) {
                     restoreUI();
                     log.info("Flashed to latest Espruino build!", result);
                 });
-        }).catch(error => {
-            esp.close();
-            new Notification("An error occured during flashing.");
+        }).catch(err => {
             isFlashing = false;
-            log.error("Oh noes!", error);
+            esp.close();
+            log.error("Oh noes!", err);
+            onError(err);
             restoreUI();
         });
     });
