@@ -22,7 +22,6 @@ var last_notification = "";
  * Note: Paths are relative to index.html not app.js
  ************************/
 
-const remote = require("remote");
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
 const prepareBinaries = require("../back-end/prepare_binaries");
@@ -161,13 +160,11 @@ function generateManifestList(manifestsJSON) {
 function getManifests() {
     appStatus.textContent = "Getting latest manifests.";
     // Break the cache to get the latest
-    remote.getCurrentWindow().webContents.session.clearCache(() => {
-        fetch(CONSTANTS.manifestList)
-            .then(processJSON)
-            .then(generateManifestList).catch(error => {
-                setTimeout(getManifests, CONSTANTS.pollTime);
-            });
-    });
+    fetch(CONSTANTS.manifestList)
+        .then(processJSON)
+        .then(generateManifestList).catch(error => {
+            setTimeout(getManifests, CONSTANTS.pollTime);
+        });
 }
 
 function updateProgressUI(percent, display) {

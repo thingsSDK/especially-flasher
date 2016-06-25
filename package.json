@@ -40,7 +40,7 @@
   },
   "homepage": "https://github.com/thingsSDK/flasher.js#readme",
   "dependencies": {
-    "bunyan": "^1.8.0",
+    "bunyan": "^1.8.1",
     "decompress": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "node-binary": "^1.1.0",
@@ -51,11 +51,11 @@
     "chai": "^3.5.0",
     "electron-installer-dmg": "^0.1.1",
     "electron-osx-sign": "^0.4.0-beta4",
-    "electron-packager": "^7.0.3",
-    "electron-prebuilt": "^0.36.9",
-    "electron-rebuild": "^1.1.3",
-    "electron-winstaller": "^2.2.0",
+    "electron-packager": "^7.1.0",
+    "electron-prebuilt": "^1.2.5",
+    "electron-rebuild": "^1.1.5",
+    "electron-winstaller": "^2.3.1",
     "jshint": "^2.9.2",
-    "mocha": "^2.4.5"
+    "mocha": "^2.5.3"
   }
 }
