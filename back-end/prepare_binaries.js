@@ -17,29 +17,44 @@ function addBufferToBinary(flashSpecification, fileName, buffer) {
     });
 }
 
-function prepareBinaries(manifest, callback) {
+function prepareBinaries(manifest) {
     const eventEmitter = new EventEmitter();
     const flashContents = manifest.flash;
     let body;
-    const downloadRequest = request(manifest.download).on("data", data => {
-        if(body) {
-            body = Buffer.concat([body, data]);
-        } else {
-            body = data;
-        }
-    }).on("complete", ()=>{
-        try {
-         decompress(body, {
+    let contentLength;
+    const downloadRequest = request(manifest.download)
+        .on("response", response => {
+            contentLength = Number(response.headers["content-length"]);
+        })
+        .on("data", data => {
+            if(body) {
+                body = Buffer.concat([body, data]);
+            } else {
+                body = data;
+            }
+            const progress = {
+                details: {
+                    downloadedBytes: body.length,
+                    downloadSize: contentLength
+                },
+                display: "Downloading"
+            };
+            eventEmitter.emit("progress", progress);
+        })
+        .on("complete", () => {
+            decompress(body, {
                  filter: file => isBinaryFileRequired(flashContents, file.path)
-            }).then(files => {
-                files.forEach(file => addBufferToBinary(flashContents, file.path, file.data)
-);
-                callback(null, flashContents);
-            }).catch(callback);
-        } catch(e){
-            alert(e.message);
-        }
-    }).on("error", error => eventEmitter.emit("entry", {display: error.message }));
+            })
+            .then(files => {
+                files.forEach(
+                    file => addBufferToBinary(flashContents, file.path, file.data)
+                );
+                eventEmitter.emit("complete", flashContents);
+            })
+            .catch(err => eventEmitter.emit("error", err));
+      })
+      .on("error", err => eventEmitter.emit("error", err));
+    
     return eventEmitter;
 }
 

@@ -70,7 +70,7 @@ function processJSON(response) {
  * Handle UI
 ************************/
 
-flashButton.addEventListener("click", (event) => {
+flashButton.addEventListener("click", event => {
     isFlashing = true;
     disableInputs();
     prepareUIForFlashing(() => {
@@ -84,21 +84,21 @@ flashButton.addEventListener("click", (event) => {
  * Manage serial port events
  ************************/
 
- serialScanner.on("ports", (ports) => {
+ serialScanner.on("ports", ports => {
     portsSelect.addAll(ports);
 });
 
-serialScanner.on("deviceAdded", (port) => {
+serialScanner.on("deviceAdded", port => {
     portsSelect.add(port);
     new Notification(`Added: ${port}!`);
 });
 
-serialScanner.on("deviceRemoved", (port) => {
+serialScanner.on("deviceRemoved", port => {
     portsSelect.remove(port);
     new Notification(`Removed: ${port}!`);
 });
 
-serialScanner.on("error", (err) => {
+serialScanner.on("error", err => {
     if(err.message === "No serial ports detected.") {
         if(portsSelect.children[0]) {
             portsSelect.remove(portsSelect.children[0].textContent);
@@ -147,8 +147,8 @@ function onError(error){
 }
 
 function generateManifestList(manifestsJSON) {
-    manifestsJSON.options.forEach((option) => {
-        option.versions.forEach((version) => {
+    manifestsJSON.options.forEach(option => {
+        option.versions.forEach(version => {
             const optionElement = document.createElement("option");
             optionElement.textContent = `${option.name} - ${version.version}`;
             optionElement.value = version.manifest;
@@ -170,28 +170,31 @@ function getManifests() {
     });
 }
 
+function updateProgressUI(percent, display) {
+        percent = Math.round(percent * 100);
+        updateProgressBar(percent, svg);
+        appStatus.textContent = `${display} - ${percent}%`;
+}
+
 function flashWithManifest(manifest) {
     appStatus.textContent = `Flashing ${portsSelect.value}`;
-    const numberOfSteps = manifest.flash.length * 2;
-    let correctStepNumber = 1;
-    prepareBinaries(manifest, (err, flashSpec) => {
-        if(err) throw err;
-
+    prepareBinaries(manifest)
+    .on("error", onError)
+    .on("progress", progress => {
+        //For the download/extract progress.
+        updateProgressUI(progress.details.downloadedBytes / progress.details.downloadSize, progress.display);
+    })
+    .on("complete", flashSpec => {
         const esp = new RomComm({
             portName: portsSelect.value,
             baudRate: 115200
         });
 
-        esp.on('progress', (progress) => {
-            const flashPercent = Math.round((progress.details.flashedBytes/progress.details.totalBytes) * 100);
-            const processSoFar = 50; //From download and extracting.
-            const flashProcess = flashPercent / 2; //To add to the overall progress
-            updateProgressBar(processSoFar + flashProcess, svg);
-            appStatus.textContent = `${progress.display} - ${flashPercent}%`;
-
+        esp.on('progress', progress => {
+            updateProgressUI(progress.details.flashedBytes/progress.details.totalBytes, progress.display);
         });
 
-        esp.open().then((result) => {
+        esp.open().then(result => {
             appStatus.textContent = `Flashing device connected to ${portsSelect.value}`;
             let promise = Promise.resolve();
             return esp.flashSpecifications(flashSpec)
@@ -202,23 +205,14 @@ function flashWithManifest(manifest) {
                     restoreUI();
                     log.info("Flashed to latest Espruino build!", result);
                 });
-        }).catch((error) => {
+        }).catch(error => {
             esp.close();
             new Notification("An error occured during flashing.");
             isFlashing = false;
             log.error("Oh noes!", error);
             restoreUI();
         });
-    })
-    .on("error", onError)
-    .on("entry", (progress) => {
-        //For the download/extract progress. The other half is flashing.
-        const extractPercent = Math.round((correctStepNumber++/numberOfSteps) * 50);
-        updateProgressBar(extractPercent, svg);
-        appStatus.textContent = progress.display;
     });
-    
-    
 }
 
 function cloneSVGNode(node) {
@@ -243,7 +237,7 @@ function updateProgressBar(percent, svg){
                                     .map(cloneSVGNode)
                                     .map(updateClass);
 
-        backgroundElements.forEach(node => g.insertBefore(node, line));
+        backgroundElements.forEach(element => g.insertBefore(element, line));
     }
 
     const bgLine = backgroundElements[0];
