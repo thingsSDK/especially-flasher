@@ -2,4 +2,8 @@
 
 const bunyan = require("bunyan");
 
-module.exports = bunyan.createLogger({name: "flasher.js"});
+process.stderr.write = console.error.bind(console); process.stdout.write = console.log.bind(console); 
+
+module.exports = bunyan.createLogger({
+    name: "flasher.js"
+});
