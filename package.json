@@ -41,12 +41,12 @@
   "homepage": "https://github.com/thingsSDK/flasher.js#readme",
   "dependencies": {
     "bunyan": "^1.8.0",
+    "decompress": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "node-binary": "^1.1.0",
     "request": "^2.72.0",
     "serialport": "^2.0.7-beta1",
-    "tar.gz": "^1.0.3",
-    "unzip": "^0.1.11"
+    "tar.gz": "^1.0.3"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -56,6 +56,7 @@
     "electron-prebuilt": "^0.36.9",
     "electron-rebuild": "^1.1.3",
     "electron-winstaller": "^2.2.0",
+    "jshint": "^2.9.2",
     "mocha": "^2.4.5"
   }
 }

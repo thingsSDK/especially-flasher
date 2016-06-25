@@ -58,7 +58,7 @@ class PortSelect {
      * Updates the disabled attribute on the SELECT element.
      * @param value
      */
-    set disabled (value) {
+    set disabled(value) {
         this.selectElement.disabled = value;
     }
 

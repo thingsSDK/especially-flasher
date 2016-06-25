@@ -1,6 +1,7 @@
 "use strict";
+
 const request = require("request");
-const unzip = require("unzip");
+const decompress = require("decompress");
 const fs = require("fs");
 const EventEmitter = require("events");
 
@@ -19,36 +20,26 @@ function addBufferToBinary(flashSpecification, fileName, buffer) {
 function prepareBinaries(manifest, callback) {
     const eventEmitter = new EventEmitter();
     const flashContents = manifest.flash;
-    const downloadRequest = request(manifest.download)
-        .pipe(unzip.Parse())
-        .on('entry', (entry) => {
-            const fileName = entry.path;
-            if (isBinaryFileRequired(flashContents, fileName)) {
-                eventEmitter.emit("entry", {
-                    display: `Extracting ${fileName}`,
-                    stage: "start"
-                });
-
-                let body;
-                entry.on("data", function(data){
-                    if(body) {
-                        body = Buffer.concat([body, data]);
-                    } else {
-                        body = data;
-                    }
-                }).on("end", () => {
-                    eventEmitter.emit("entry", {
-                        display: `Extracted ${fileName}`,
-                        stage: "end"
-                    });
-                    addBufferToBinary(flashContents, fileName, body);
-                }).on("error", callback);
-            } else {
-                entry.autodrain();
-            }
-        }).on("close", () => {
-            callback(null, flashContents);
-        });
+    let body;
+    const downloadRequest = request(manifest.download).on("data", data => {
+        if(body) {
+            body = Buffer.concat([body, data]);
+        } else {
+            body = data;
+        }
+    }).on("complete", ()=>{
+        try {
+         decompress(body, {
+                 filter: file => isBinaryFileRequired(flashContents, file.path)
+            }).then(files => {
+                files.forEach(file => addBufferToBinary(flashContents, file.path, file.data)
+);
+                callback(null, flashContents);
+            }).catch(callback);
+        } catch(e){
+            alert(e.message);
+        }
+    }).on("error", error => eventEmitter.emit("entry", {display: error.message }));
     return eventEmitter;
 }
 

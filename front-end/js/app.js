@@ -314,8 +314,11 @@ function inputStateManager() {
 function start() {
     getManifests();
     serialScanner.scan();
-    setInterval(serialScanner.checkForChanges.bind(serialScanner), CONSTANTS.pollTime);
-    setInterval(inputStateManager, CONSTANTS.pollTime);
+
+    setInterval(() => {
+        serialScanner.checkForChanges();
+        inputStateManager();
+    }, CONSTANTS.pollTime);
 }
 
 /**

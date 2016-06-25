@@ -113,4 +113,5 @@ function handleSquirrelEvent() {
       app.quit();
       return true;
   }
-};
+}
+
