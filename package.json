@@ -1,7 +1,7 @@
 {
   "name": "flasher.js",
   "version": "1.0.0",
-  "description": "A GUI tool for flashing the Espruino JavaScript runtime on to SP8366 based boards",
+  "description": "A GUI tool for flashing the JavaScript runtimes and other firmware on to ESP8266 based microcontrollers and development boards",
   "main": "index.js",
   "scripts": {
     "start": "electron .", 
@@ -10,9 +10,9 @@
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
     "rebuild": "electron-rebuild",
 
-    "pack-windows": "electron-packager . Flasher.js --asar  --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
-    "pack-mac": "electron-packager . --asar --overwrite --platform=darwin --arch=x64 --icon=resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science'",
-    "pack-linux": "electron-packager . --asar --overwrite --platform=linux --arch=x64 --prune=true --out=out",
+    "pack-windows": "electron-packager . Flasher.js --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
+    "pack-mac": "electron-packager . Flasher.js --asar --asar-unpack=protocol-link.html --overwrite --platform=darwin --arch=x64 --icon=resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science'",
+    "pack-linux": "electron-packager . Flasher.js --asar --asar-unpack=protocol-link.html --overwrite --platform=linux --arch=x64 --icon=resources/png/64x64.png --prune=true --out=out",
 
     "sign-mac": "electron-osx-sign out/Flasher.js-darwin-x64/Flasher.js.app",
 
@@ -21,7 +21,7 @@
     "installer-linux": "electron-installer-debian --src out/Flasher.js-linux-x64/ --dest out/installers/ --arch amd64",
 
     "dist-windows": "npm run pre-rebuild && npm run rebuild && npm run pack-windows && npm run installer-windows",
-    "dist-linux": "npm run pre-rebuild && npm run rebuild && npm run pack-linux",
+    "dist-linux": "npm run pre-rebuild && npm run rebuild && npm run pack-linux && npm run installer-linux",
     "dist-mac": "npm run pack-mac && npm run sign-mac && npm run installer-mac"
   },
   "repository": {
