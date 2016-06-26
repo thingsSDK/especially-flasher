@@ -10,7 +10,7 @@ if (handleSquirrelEvent()) {
 const electron = require('electron');
 const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
-
+const checkDialout = require("./back-end/checkDialout");
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
@@ -25,6 +25,17 @@ app.on('window-all-closed', function() {
   }
 });
 
+var  launchApp = function() {
+  // load the index.html of the app.
+  mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
+
+}
+
+function launchLinuxHelper() {
+  // load the linux-help.html of the app.
+  mainWindow.loadURL('file://' + __dirname + '/front-end/linux-help.html');
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
@@ -37,9 +48,18 @@ app.on('ready', function() {
     'accept-first-mouse': true
   });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
-
+  if(process.platform === "linux") {
+      checkDialout(launchApp, (err) => {
+          if(err.message === checkDialout.ERROR_MESSAGES.USER_NOT_IN_DIALOUT) {
+              launchLinuxHelper();
+          } else {
+              //TODO: When another error occurs propogate the error somehow.
+              launchApp();
+          }
+      });
+  } else {
+      launchApp();
+  }
   // Open the DevTools.
   // mainWindow.webContents.openDevTools();
 

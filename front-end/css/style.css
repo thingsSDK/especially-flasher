@@ -113,3 +113,20 @@ footer {
 	display: inline-block;
 }
 
+#warning p {
+    line-height: 1.5;
+    margin-top:5px;
+}
+
+.code {
+    background: #ccc;
+    border: 1px solid #999;
+    font-family: monospace;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+#warning p.code {
+    padding:1px 10px;
+    display: inline-block;
+}

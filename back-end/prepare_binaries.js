@@ -3,7 +3,7 @@
 const request = require("request");
 const decompress = require("decompress");
 const fs = require("fs");
-const EventEmitter = require("events");
+const EventEmitter = require("events").EventEmitter;
 
 function isBinaryFileRequired(flashSpecification, fileName) {
     return flashSpecification.map(binary => binary.path).indexOf(fileName) !== -1;
@@ -22,7 +22,7 @@ function prepareBinaries(manifest) {
     const flashContents = manifest.flash;
     let body;
     let contentLength;
-    const downloadRequest = request(manifest.download)
+    request(manifest.download)
         .on("response", response => {
             contentLength = Number(response.headers["content-length"]);
         })
