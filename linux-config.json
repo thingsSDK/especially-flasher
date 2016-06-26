@@ -1,0 +1,38 @@
+{
+  "productName": "Flasher.js",
+  "dest": "out/installers/",
+  "icon": {
+    "16x16": "resources/png/icon16.png",
+    "24x24": "resources/png/icon24.png",
+    "32x32": "resources/png/icon32.png",
+    "48x48": "resources/png/icon48.png",
+    "64x64": "resources/png/icon64.png",
+    "96x96": "resources/png/icon96.png",
+    "128x128": "resources/png/icon128.png",
+    "256x256": "resources/png/icon256.png",
+    "512x512": "resources/png/icon512.png"
+  },
+  "categories": [
+    "Development Tools"
+  ],
+  "depends": [
+    "git",
+    "gconf2",
+    "gconf-service",
+    "gvfs-bin",
+    "libc6",
+    "libcap2",
+    "libgtk2.0-0",
+    "libudev0 | libudev1",
+    "libgcrypt11 | libgcrypt20",
+    "libappindicator1",
+    "libnotify4",
+    "libnss3",
+    "libxtst6",
+    "python",
+    "xdg-utils"
+  ],
+  "lintianOverrides": [
+    "changelog-file-missing-in-native-package"
+  ]
+}
