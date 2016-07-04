@@ -4,7 +4,7 @@
   "description": "A GUI tool for flashing the JavaScript runtimes and other firmware on to ESP8266 based microcontrollers and development boards",
   "main": "index.js",
   "scripts": {
-    "start": "electron .", 
+    "start": "electron .",
     "test": "mocha",
 
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
@@ -55,7 +55,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "node-binary": "^1.1.0",
     "request": "^2.72.0",
-    "serialport": "^2.0.7-beta1"
+    "serialport": "4.0.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",
