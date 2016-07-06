@@ -6,7 +6,6 @@
   "scripts": {
     "start": "electron .",
     "test": "mocha",
-
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
     "rebuild": "cd node_modules/serialport && node-gyp rebuild --target=1.2.5 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
    
@@ -54,6 +53,7 @@
     "decompress": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "request": "^2.72.0",
+    "rimraf": "^2.5.3",
     "serialport": "4.0.0"
   },
   "devDependencies": {
@@ -61,7 +61,6 @@
     "electron-packager": "^7.1.0",
     "electron-prebuilt": "^1.2.5",
     "electron-winstaller": "^2.3.1",
-    "jshint": "^2.9.2",
     "mocha": "^2.5.3"
   }
 }
