@@ -6,20 +6,15 @@
   "scripts": {
     "start": "electron .",
     "test": "mocha",
-
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
     "rebuild": "electron-rebuild",
-
     "pack-windows": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
     "pack-mac": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=darwin --arch=x64 --icon=resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science'",
     "pack-linux": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=linux --arch=x64 --icon=resources/png/icon64.png --prune=true --out=out",
-
     "sign-mac": "electron-osx-sign out/Flasher.js-darwin-x64/Flasher.js.app",
-
     "installer-windows": "node ./scripts/windows-installer.js",
     "installer-mac": "electron-installer-dmg --overwrite --out=out/installers/ out/Flasher.js-darwin-x64/Flasher.js.app Flasher.js --icon=resources/icon.icns",
     "installer-linux": "electron-installer-debian --src out/flasher.js-linux-x64/ --arch amd64 --config linux-config.json",
-
     "dist-windows": "npm run pre-rebuild && npm run rebuild && npm run pack-windows && npm run installer-windows",
     "dist-linux": "npm run pre-rebuild && npm run rebuild && npm run pack-linux && npm run installer-linux",
     "dist-mac": "npm run pack-mac && npm run sign-mac && npm run installer-mac"
@@ -53,8 +48,8 @@
     "bunyan": "^1.8.1",
     "decompress": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
-    "node-binary": "^1.1.0",
     "request": "^2.72.0",
+    "rimraf": "^2.5.3",
     "serialport": "4.0.0"
   },
   "devDependencies": {
@@ -65,7 +60,6 @@
     "electron-prebuilt": "^1.2.5",
     "electron-rebuild": "^1.1.5",
     "electron-winstaller": "^2.3.1",
-    "jshint": "^2.9.2",
     "mocha": "^2.5.3"
   }
 }
