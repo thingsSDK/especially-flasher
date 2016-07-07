@@ -38,3 +38,6 @@ typings
 
 # Webstorm/JetBrains
 .idea
+
+windows.p12
+sign.bat

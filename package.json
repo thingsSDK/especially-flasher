@@ -14,12 +14,14 @@
     "pack-linux": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=linux --arch=x64 --icon=resources/png/icon64.png --prune=true --out=out",
   
     "sign-mac": "electron-osx-sign out/Flasher.js-darwin-x64/Flasher.js.app",
-   
+    "sign-windows": "node ./scripts/sign-windows.js",
+    "sign-installer-windows": "node ./scripts/sign-installer-windows.js",
+
     "installer-windows": "node ./scripts/windows-installer.js",
     "installer-mac": "electron-installer-dmg --overwrite --out=out/ out/Flasher.js-darwin-x64/Flasher.js.app Flasher.js --icon=resources/icon.icns --background=resources/drag_to_install.png",
     "installer-linux": "electron-installer-debian --src out/flasher.js-linux-x64/ --arch amd64 --config linux-config.json",
   
-    "dist-windows": "npm run pre-rebuild && npm run rebuild && npm run pack-windows && npm run installer-windows",
+    "dist-windows": "npm run pre-rebuild && npm run rebuild && npm run pack-windows && npm run sign-windows && npm run installer-windows && npm run sign-installer-windows",
     "dist-linux": "npm run pre-rebuild && npm run rebuild && npm run pack-linux && npm run installer-linux",
     "dist-mac": "npm run pre-rebuild && npm run rebuild && npm run pack-mac && npm run sign-mac && npm run installer-mac"
   },
