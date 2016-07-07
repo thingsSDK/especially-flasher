@@ -1,0 +1,20 @@
+{
+  "title": "Flasher.js",
+  "contents": [
+    {
+      "x": 448,
+      "y": 344,
+      "type": "link",
+      "path": "/Applications"
+    },
+    {
+      "x": 192,
+      "y": 344,
+      "type": "file",
+      "path": "/Users/andrew/Projects/flasher.js/out/flasher.js-darwin-x64/flasher.js.app"
+    }
+  ],
+  "icon": "/Users/andrew/Projects/flasher.js/resources/icon.icns",
+  "icon-size": 80,
+  "background": "/Users/andrew/Projects/flasher.js/resources/drag_to_install.png"
+}
