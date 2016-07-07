@@ -7,7 +7,8 @@ describe('ESP8266', () => {
     const boards = require('../back-end/boards');
     it('defaults to the Esp12', () => {
         var esp = new RomComm({
-            portName: 'TEST'
+            portName: 'TEST',
+            baudRate: 9600
         });
         expect(esp.board).to.be.an.instanceof(boards.Esp12);
     });
@@ -16,7 +17,7 @@ describe('ESP8266', () => {
 describe('RomComm', () => {
    const esp = new RomComm({
        portName: "/dev/ttys000",
-       baud: 9600
+       baudRate: 9600
    });
    describe('handleResponse', () => {
        // Helper function for response creation, takes *args

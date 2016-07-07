@@ -2,7 +2,7 @@
 
 const EventEmitter = require("events");
 const fs = require("fs");
-const SerialPort = require("serialport").SerialPort;
+const SerialPort = require("serialport");
 const log = require("./logger");
 const slip = require("./streams/slip");
 const boards = require("./boards");
@@ -59,6 +59,7 @@ class RomComm extends EventEmitter {
     constructor(config) {
         super();
         this._port = new SerialPort(config.portName, {
+            autoOpen: false,
             baudRate: config.baudRate,
             parity: 'none',
             stopBits: 1,
@@ -66,7 +67,7 @@ class RomComm extends EventEmitter {
             xoff: false,
             rtscts: false,
             dsrdtr: false
-        }, false);
+        });
         this.bindPort();
         this.resetState();
         var boardName = config.boardName ? config.boardName : "Esp12";
