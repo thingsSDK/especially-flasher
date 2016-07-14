@@ -13,6 +13,10 @@ Windows, Mac OS X and Linux.
 
 This tool flashes (installs) the Espruino JavaScript run time on ESP8266
 EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
+-----
+## Downloda
+
+The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js/releases) for Windows, macOS and Linux.
 
 -----
 
