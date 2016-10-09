@@ -24,12 +24,13 @@ The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js
 
 ## Application Compatibility 
 
-|OS|Status|
-|---|:-----:|
-|Windows 10| Tested |
-|Windows 8.1| Tested |
-|Ubuntu 14.04 LTS| Tested |
-|Mac OS X 10.11| Tested |
+|OS|Arch|Status|
+|---|:---:|:---:|
+|Windows 10 | 32-bit | Tested |
+|Windows 10 | 64-bit | Tested |
+|Windows 8.1 | 64-bit | Tested |
+|Ubuntu 14.04 LTS | 64-bit | Tested |
+|Mac OS X 10.11 | 64-bit | Tested |
 
 
 ## Device Compatibility
