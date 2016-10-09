@@ -4,7 +4,7 @@
 [![devDependency Status](https://david-dm.org/thingsSDK/flasher.js/dev-status.svg)](https://david-dm.org/thingsSDK/flasher.js#info=devDependencies)
 
 
-<img src="http://thingssdk.com/flasher.js.svg" width="180px" height="180px">
+<img src="http://thingssdk.com/images/flasher.js.svg" width="180px" height="180px">
 
 
 _Flasher.js_ is a tool to get JavaScript running natively on
