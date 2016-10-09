@@ -39,5 +39,8 @@ typings
 # Webstorm/JetBrains
 .idea
 
+# VS Code
+.vscode
+
 windows.p12
 sign.bat
