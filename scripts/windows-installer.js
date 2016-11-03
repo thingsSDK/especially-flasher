@@ -30,7 +30,7 @@ function getInstallerConfig() {
     loadingGif: path.join(rootPath, 'resources', 'loading.gif'),
     noMsi: true,
     outputDirectory: path.join(outPath, 'installers'),
-    setupExe: 'flasher.js-setup.exe',
+    setupExe: 'flasher.js-setup-' + winExt + '.exe',
     setupIcon: path.join(rootPath, 'resources', 'icon.ico'),
     skipUpdateIcon: true
   });
