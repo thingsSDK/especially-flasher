@@ -1,4 +1,4 @@
-a# Flasher.js
+# Flasher.js
 [![Build Status](https://api.travis-ci.org/thingsSDK/flasher.js.svg)](https://travis-ci.org/thingsSDK/flasher.js) 
 [![Dependency Status](https://david-dm.org/thingsSDK/flasher.js.svg)](https://david-dm.org/thingsSDK/flasher.js)
 [![devDependency Status](https://david-dm.org/thingsSDK/flasher.js/dev-status.svg)](https://david-dm.org/thingsSDK/flasher.js#info=devDependencies)
