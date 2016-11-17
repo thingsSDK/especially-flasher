@@ -44,35 +44,10 @@ The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js
 |[WiFi Witty](http://www.aliexpress.com/item/Smart-Electronics-ESP8266-serial-WIFI-Witty-cloud-Development-Board-ESP-12F-module-MINI-nodemcu/32597903268.html)|Tested|Requires installation of ch340g driver for macOS.  Information can be found [here](http://www.wemos.cc/tutorial/get_started_in_nodemcu.html).  For Mac there can be issues installing the driver.  Work around can be found [here](https://tzapu.com/making-ch340-ch341-serial-adapters-work-under-el-capitan-os-x/).|
 -------
 
-## Run the GUI in Development
+## Developing Flasher.js
 
-### OS X
+If you want to develop the Flasher.js GUI take a look at the [development guide](DEVELOPING.md).
 
-```bash
-npm install
-npm start
-```
-
-### Windows 10
-
-You'll need installed:
-
-* Visual Studio Community Edition (or better) installed with Windows 8/8.1 SDK.
-* Python 2.7
-
-```
-npm install
-npm run pre-rebuild && npm run rebuild
-npm start
-```
-
-### Linux
-
-```
-npm install
-npm run pre-rebuild && npm run rebuild
-sudo npm start
-```
 -------
 
 ## Contributing
