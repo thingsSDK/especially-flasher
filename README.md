@@ -1,4 +1,4 @@
-# Flasher.js
+a# Flasher.js
 [![Build Status](https://api.travis-ci.org/thingsSDK/flasher.js.svg)](https://travis-ci.org/thingsSDK/flasher.js) 
 [![Dependency Status](https://david-dm.org/thingsSDK/flasher.js.svg)](https://david-dm.org/thingsSDK/flasher.js)
 [![devDependency Status](https://david-dm.org/thingsSDK/flasher.js/dev-status.svg)](https://david-dm.org/thingsSDK/flasher.js#info=devDependencies)
@@ -16,7 +16,7 @@ EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
 -----
 
-## Downlods
+## Downloads
 
 The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js/releases) for Windows, Linux and Mac OS X.
 
