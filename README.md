@@ -31,7 +31,7 @@ The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js
 |Windows 8.1 | 64-bit | Tested |
 |Ubuntu 14.04 LTS | 64-bit | Tested |
 |Mac OS X 10.11 | 64-bit | Tested |
-
+|Mac OS X 10.12 | 64-bit | Tested |
 
 ## Device Compatibility
 
