@@ -1,6 +1,6 @@
 {
   "name": "flasher.js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A GUI tool for flashing the JavaScript runtimes and other firmware on to ESP8266 based microcontrollers and development boards",
   "main": "index.js",
   "scripts": {
@@ -61,7 +61,7 @@
     "electron-squirrel-startup": "^1.0.0",
     "request": "^2.72.0",
     "rimraf": "^2.5.3",
-    "serialport": "4.0.0"
+    "serialport": "^4.0.6"
   },
   "devDependencies": {
     "chai": "^3.5.0",

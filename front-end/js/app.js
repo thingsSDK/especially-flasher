@@ -9,7 +9,7 @@
  * @type {{manifestList: string, pollTime: number}}
  */
 const CONSTANTS = {
-    manifestList: "http://flasher.thingssdk.com/v1/manifest-list.json",
+    manifestList: "http://flasher.thingssdk.com/v1.1/manifest-list.json",
     pollTime: 1000
 };
 
