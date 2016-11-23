@@ -13,9 +13,9 @@ const CONSTANTS = {
     pollTime: 1000
 };
 
-var isFlashing = false;
+let isFlashing = false;
 
-var last_notification = "";
+let last_notification = "";
 
 /************************
  * Backend dependencies.
@@ -257,7 +257,7 @@ function updateProgressBar(percent, svg){
         finishDot.style.opacity = 0;
     }
 
-    for(var i = 0; i < percent * (bgLine.points.numberOfItems / 100); i ++) {
+    for(let i = 0; i < percent * (bgLine.points.numberOfItems / 100); i ++) {
         if(i < bgLine.points.numberOfItems) {
             const point = bgLine.points.getItem(i);
             const newPoint = svg.createSVGPoint();
