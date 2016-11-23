@@ -7,8 +7,8 @@
     "start": "electron .",
     "test": "mocha",
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
-    "rebuild": "cd node_modules/serialport && node-gyp rebuild --target=1.2.5 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
-    "rebuild-32": "cd node_modules/serialport && node-gyp rebuild --target=1.2.5 --arch=ia32 --dist-url=https://atom.io/download/atom-shell",
+    "rebuild": "cd node_modules/serialport && node-gyp rebuild --target=1.4.8 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
+    "rebuild-32": "cd node_modules/serialport && node-gyp rebuild --target=1.4.8 --arch=ia32 --dist-url=https://atom.io/download/atom-shell",
 
     "pack-windows": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
     "pack-windows-32": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=ia32 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js",
@@ -56,18 +56,18 @@
   },
   "homepage": "https://github.com/thingsSDK/flasher.js#readme",
   "dependencies": {
-    "bunyan": "^1.8.1",
+    "bunyan": "^1.8.5",
     "decompress": "^4.0.0",
     "electron-squirrel-startup": "^1.0.0",
-    "request": "^2.72.0",
-    "rimraf": "^2.5.3",
+    "request": "^2.79.0",
+    "rimraf": "^2.5.4",
     "serialport": "^4.0.6"
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "electron-packager": "^7.1.0",
-    "electron-prebuilt": "1.2.5",
-    "electron-winstaller": "^2.3.1",
-    "mocha": "^2.5.3"
+    "electron-packager": "^8.3.0",
+    "electron-prebuilt": "1.4.8",
+    "electron-winstaller": "^2.4.1",
+    "mocha": "^3.1.2"
   }
 }
