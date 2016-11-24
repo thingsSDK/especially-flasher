@@ -1,0 +1,38 @@
+button {
+	background-image: linear-gradient(-180deg, #4C98FE 0%, #0664E3 100%);
+	box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.15);
+	border-radius: 3px;
+	font-size: 14px;
+	color: #FFFFFF;
+	letter-spacing: -0.11px;
+	line-height: 12px;
+	height: 21px;
+	width: 60px;
+	border: 0.5px solid #247EFF;
+}
+
+button:disabled {
+	background: #eee;
+	color: #aaa;
+}
+
+button:hover {
+	background-image: linear-gradient(-180deg, #5DA9FF 0%, #1775F4 100%);
+	box-shadow: 0px 0px 2px 0px rgba(0,0,0,0.5);
+}
+
+button:hover:disabled {
+	background: #eee;
+	color: #aaa;
+}
+
+
+#form .field {
+	margin-top:20px;
+	line-height: 1.5;
+}
+
+#form .button {
+	margin-top: 10px;
+	text-align: right;
+}

@@ -1,24 +1,80 @@
-.App {
-  text-align: center;
+* {
+	margin: 0;
+	padding: 0;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+html {
+	overflow: hidden;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+body {
+	font-size: 14px;
+	font-family: HelveticaNeue, "Lucida Grande", Helvetica, Arial, sans-serif;
+	color: #010101;
 }
 
-.App-intro {
-  font-size: large;
+footer {
+	position:fixed;
+	left:0;
+	bottom:0;
+	height:30px;
+	padding-top:10px;
+	width:100%;
+	text-align: center;
+	border-top: 1px solid #EDEAE8;
+	background: white;
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+#app {
+	margin:27px auto;
+	display: flex;
+	background: white;
+	width: 500px;
+}
+
+
+@keyframes moveLeft {
+    0%   {margin-left: 0px;}
+    100% {margin-left: 160px;}
+}
+
+@keyframes moveBack {
+    0%   {margin-left: 160px;}
+    100% {margin-left: 0px;}
+}
+
+#app.flashing #logo {
+	animation: moveLeft 500ms ease-in;
+	margin-left: 160px;
+}
+
+#app.flashing #form {
+	display: none;
+}
+
+#app.finished #logo {
+	animation: moveBack 500ms ease-in;
+	margin-left: 0px;
+}
+
+#app.finished #form {
+	display: inline-block;
+}
+
+#warning p {
+    line-height: 1.5;
+    margin-top:5px;
+}
+
+.code {
+    background: #ccc;
+    border: 1px solid #999;
+    font-family: monospace;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+#warning p.code {
+    padding:1px 10px;
+    display: inline-block;
 }
