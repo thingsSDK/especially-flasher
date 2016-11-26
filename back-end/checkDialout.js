@@ -14,9 +14,9 @@ function checkDialout(success, failure) {
         if(err) {
             failure(err);
         } else {
-            const groups = stdout.split(" ");
-            if(groups.indexOf("dialout") != -1) {
-                success();
+            const groups = stdout;
+	    if (groups.match(/(dialout|tty|uucp)/)) {
+	      success();
             } else {
                 const dialoutMissingError = new Error(ERROR_MESSAGES.USER_NOT_IN_DIALOUT);
                 failure(dialoutMissingError);
