@@ -25,5 +25,5 @@ npm start
 ```
 npm install
 npm run pre-rebuild && npm run rebuild
-sudo npm start
+npm start
 ```
