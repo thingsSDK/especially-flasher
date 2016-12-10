@@ -11,6 +11,8 @@ const electron = require('electron');
 const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
 const checkDialout = require("./back-end/checkDialout");
+const scanForPorts = require('./back-end/scanForPorts');
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
@@ -28,8 +30,13 @@ app.on('window-all-closed', () => {
 function launchApp() {
   //Clears any crusty downloads/API calls
   mainWindow.webContents.session.clearCache(() => {
+    scanForPorts();
     // load the index.html of the app.
-    mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
+    if(process.env.NODE_ENV !== 'production') {
+      mainWindow.loadURL('http://localhost:3000/');
+    } else {
+      mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
+    }    
   });
 }
 

@@ -1,5 +1,5 @@
 import React from 'react';
 
-export default () => {
-    return <footer><span id="status"></span></footer>;
+export default props => {
+    return <footer><span id="status">{props.status}</span></footer>;
 }

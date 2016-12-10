@@ -3,7 +3,8 @@
 const childProcess = require("child_process");
 const ERROR_MESSAGES = {
     USER_NOT_IN_DIALOUT: "User not part of dialout group"
-}
+};
+
 /**
 * Checks for the if the current Linux user is part of the dialout group
 * @param success callback if they are part of the dialout group
@@ -11,17 +12,17 @@ const ERROR_MESSAGES = {
 */
 function checkDialout(success, failure) {
     childProcess.exec("id -Gn", (err, stdout, sterr) => {
-        if(err) {
+        if (err) {
             failure(err);
         } else {
             const groups = stdout.split(" ");
-            if(groups.indexOf("dialout") != -1) {
+            if (groups.indexOf("dialout") != -1) {
                 success();
             } else {
                 const dialoutMissingError = new Error(ERROR_MESSAGES.USER_NOT_IN_DIALOUT);
                 failure(dialoutMissingError);
             }
-        }        
+        }
     });
 }
 
