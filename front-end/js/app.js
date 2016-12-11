@@ -22,11 +22,11 @@ let last_notification = "";
  * Note: Paths are relative to index.html not app.js
  ************************/
 
+const RomComm = require("rom-comm");
 const SerialScanner = require("../back-end/serial_scanner");
 const PortSelect = require("./js/port_select");
 const prepareBinaries = require("../back-end/prepare_binaries");
 const log = require("../back-end/logger");
-const RomComm = require("../back-end/rom_comm");
 const serialScanner = new SerialScanner();
 
 /************************
@@ -186,32 +186,22 @@ function flashWithManifest(manifest) {
         updateProgressUI(progress.details.downloadedBytes / progress.details.downloadSize, progress.display);
     })
     .on("complete", flashSpec => {
-        const esp = new RomComm({
-            portName: portsSelect.value,
-            baudRate: 115200
+        const device = RomComm.serial(portsSelect.value, {baudRate: 460800}, {
+            onProgress: progress => updateProgressUI(progress.flashedBytes / progress.totalBytes, 'Flashing')
         });
-
-        esp.on('progress', progress => {
-            updateProgressUI(progress.details.flashedBytes/progress.details.totalBytes, progress.display);
-        });
-
-        esp.open().then(result => {
+        device.open((err) => {
             appStatus.textContent = `Flashing device connected to ${portsSelect.value}`;
-            let promise = Promise.resolve();
-            return esp.flashSpecifications(flashSpec)
-                .then(() => esp.close())
-                .then((result) => {
-                    new Notification("Flash Finished!");
+            device.flash(flashSpec, (err) => {
+                // TODO: This err doesn't come through
+                if (err) {
                     isFlashing = false;
+                    onError(err);
                     restoreUI();
-                    log.info("Flashed to latest Espruino build!", result);
-                });
-        }).catch(err => {
-            isFlashing = false;
-            esp.close();
-            log.error("Oh noes!", err);
-            onError(err);
-            restoreUI();
+                }
+                new Notification("Flash Finished!");
+                isFlashing = false;
+                restoreUI();
+            });
         });
     });
 }
@@ -244,7 +234,7 @@ function updateProgressBar(percent, svg){
     const bgLine = backgroundElements[0];
 
     line.points.clear();
-    
+
     if( percent < 1 ) {
         startDot.style.opacity = 0;
     } else {
@@ -272,7 +262,7 @@ function prepareUIForFlashing(callback) {
     let percent = 100;
     appWrapper.classList.remove("finished");
     appWrapper.classList.add("flashing");
-    
+
     let percentInterval = setInterval(() => {
         percent -= 1;
         updateProgressBar(percent, svg);
