@@ -11,12 +11,11 @@ const electron = require('electron');
 const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
 const checkDialout = require("./back-end/checkDialout");
-const scanForPorts = require('./back-end/scanForPorts');
+const ipcHandlers = require('./back-end/ipcHandlers');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow = null;
-
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -30,13 +29,13 @@ app.on('window-all-closed', () => {
 function launchApp() {
   //Clears any crusty downloads/API calls
   mainWindow.webContents.session.clearCache(() => {
-    scanForPorts();
+    ipcHandlers();
     // load the index.html of the app.
-    if(process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       mainWindow.loadURL('http://localhost:3000/');
     } else {
       mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
-    }    
+    }
   });
 }
 
@@ -58,7 +57,7 @@ app.on('ready', function () {
   });
 
   if (process.platform === "linux") {
-    checkDialout(launchApp, (err) => {
+    checkDialout(launchApp, err => {
       if (err.message === checkDialout.ERROR_MESSAGES.USER_NOT_IN_DIALOUT) {
         launchLinuxHelper();
       } else {
@@ -70,7 +69,7 @@ app.on('ready', function () {
     launchApp();
   }
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  if (process.env.NODE_ENV !== 'production') mainWindow.webContents.openDevTools();
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {

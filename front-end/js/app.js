@@ -309,4 +309,5 @@ function start() {
 /**
  * Start Application
  */
+
 start();

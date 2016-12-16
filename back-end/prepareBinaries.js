@@ -56,7 +56,7 @@ function prepareBinaries(manifest) {
                         );
                     });
             } else {
-                preparedPromise = new Promise((resolve, reject)=>{
+                preparedPromise = new Promise((resolve, reject) => {
                     addBufferToBinary(flashContents, fileName, body);
                     resolve();
                 });

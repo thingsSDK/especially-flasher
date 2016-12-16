@@ -36,10 +36,6 @@ function transformPortToValue(port) {
   };
 }
 
-function handleError(error) {
-  console.log(error.message);
-}
-
 class App extends Component {
   constructor() {
     super();
@@ -47,6 +43,8 @@ class App extends Component {
       ports: [],
       manifests: [],
       readyToFlash: false,
+      isFlashing: false,
+      percent: 100,
       status: 'Finding ports and manifests...'
     };
   }
@@ -54,25 +52,56 @@ class App extends Component {
   render() {
     return (
       <div className="App">
-        <div id="app">
-          <Logo />
-          <Form {...this.state} flash={this.flash.bind(this)} changeSelectedSerialPort={this.changeSelectedSerialPort.bind(this)} changeSelectedManifest={this.changeSelectedManifest.bind(this)} />
+        <div id="app" className={this.currentClass()}>
+          <Logo percent={this.state.percent} />
+          <Form {...this.state} flash={this.flash.bind(this)}
+            changeSelectedSerialPort={this.changeSelectedSerialPort.bind(this)}
+            changeSelectedManifest={this.changeSelectedManifest.bind(this)} />
         </div>
         <Footer status={this.state.status} />
       </div>
     );
   }
 
-  componentWillMount() {
+  currentClass() {
+    return this.state.isFlashing ? 'flashing' : 'finished';
+  }
+
+  prepareEventHandlers() {
     ipcRenderer.on('portsFound', (event, ports) => this.portsFound(ports));
     ipcRenderer.on('noPortError', (event, error) => {
       this.portsFound([]);
-      handleError(error)
+      this.handleError(error)
     });
+
     ipcRenderer.on('portError', (event, error) => {
       this.portsFound([]);
-      handleError(error)
+      this.handleError(error)
     });
+
+    ipcRenderer.on('flashError', (event, error) => {
+      this.finishedFlashing();
+      this.handleError(error);
+    });
+
+    ipcRenderer.on('flashComplete', event => {
+      this.finishedFlashing();
+      this.notify("Flash Finished!", true);
+    });
+
+    ipcRenderer.on('flashProgress', (event, progress) => {
+      const {percent, message} = progress;
+      let humanReadablePercent =  Math.round(percent * 100);
+
+      this.setState({
+        percent: humanReadablePercent,
+        status: `${message} - ${humanReadablePercent}%`
+      });
+    });
+  }
+
+  componentWillMount() {
+    this.prepareEventHandlers();
 
     this.scanForPorts();
     this.fetchManifests();
@@ -84,15 +113,32 @@ class App extends Component {
 
   portsFound(ports) {
     const portValues = ports.map(transformPortToValue);
-    const newState = { ports: portValues };
+    this.checkPortChange(portValues);
+
     const isFirstSerialPortAdded = this.state.ports.length === 0 && portValues.length > 0;
     const isLastSerialPort = portValues.length === 1;
-    if ( isFirstSerialPortAdded || isLastSerialPort ) {
+
+    const newState = { ports: portValues };
+
+    if (isFirstSerialPortAdded || isLastSerialPort) {
       Object.assign(newState, { selectedPort: portValues[0].value });
-    } 
+    }
+
     this.setState(newState);
-    this.scanForPorts()
+    if (!this.state.isFlashing) this.scanForPorts()
     this.prepareUI();
+  }
+
+  checkPortChange(newPortValues) {
+    const toArrayOfValues = (obj => obj.value);
+    const getDifference = otherArray => value => otherArray.indexOf(value) === -1;
+
+    const newValues = newPortValues.map(toArrayOfValues);
+    const oldValues = this.state.ports.map(toArrayOfValues);
+    const portAdded = newValues.filter(getDifference(oldValues)).pop();
+    const portRemoved = oldValues.filter(getDifference(newValues)).pop();
+    if (portAdded) this.notify(`Added: ${portAdded}!`);
+    if (portRemoved) this.notify(`Removed: ${portRemoved}!`);
   }
 
   prepareUI() {
@@ -102,7 +148,7 @@ class App extends Component {
     const newState = {
       readyToFlash
     }
-    if (readyToFlash) Object.assign(newState, { status: "Ready!" });
+    if (readyToFlash) Object.assign(newState, { status: "Ready to Flash" });
     else if (!portsReady && manifestsReady) Object.assign(newState, { status: "Scanning for serial ports." });
     this.setState(newState);
   }
@@ -129,6 +175,7 @@ class App extends Component {
         this.setState(newState);
       })
       .catch(error => {
+        this.notify(error.message);
         setTimeout(() => {
           this.fetchManifests();
         }, CONSTANTS.pollTime);
@@ -148,8 +195,27 @@ class App extends Component {
   }
 
   flash() {
-    console.log(this.state.selectedPort);
-    console.log(this.state.selectedManifest);
+    this.setState({ isFlashing: true });
+    ipcRenderer.send('flash', this.state.selectedPort, this.state.selectedManifest);
+  }
+
+  finishedFlashing() {
+    this.setState({ isFlashing: false });
+    this.scanForPorts();
+    this.setState({
+      status: 'Ready to Flash'
+    });
+  }
+
+  handleError(error) {
+    this.notify(error.message);
+  }
+
+  notify(message, force) {
+    if (this.state.lastNotification !== message || force) {
+      this.setState({ lastNotification: message });
+      new Notification(message)
+    }
   }
 }
 
