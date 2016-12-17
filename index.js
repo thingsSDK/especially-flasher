@@ -12,6 +12,7 @@ const app = electron.app;  // Module to control application life.
 const BrowserWindow = electron.BrowserWindow;  // Module to create native browser window.
 const checkDialout = require("./back-end/checkDialout");
 const ipcHandlers = require('./back-end/ipcHandlers');
+const isProd = process.execPath.search('electron-prebuilt') === -1;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -31,7 +32,7 @@ function launchApp() {
   mainWindow.webContents.session.clearCache(() => {
     ipcHandlers();
     // load the index.html of the app.
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProd) {
       mainWindow.loadURL('http://localhost:3000/');
     } else {
       mainWindow.loadURL('file://' + __dirname + '/front-end/index.html');
@@ -69,7 +70,7 @@ app.on('ready', function () {
     launchApp();
   }
   // Open the DevTools.
-  if (process.env.NODE_ENV !== 'production') mainWindow.webContents.openDevTools();
+  if (!isProd) mainWindow.webContents.openDevTools();
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {

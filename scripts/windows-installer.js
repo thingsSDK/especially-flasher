@@ -10,7 +10,7 @@ const rimraf = require('rimraf');
 const win64 = 'win32-x64';
 const win32 = 'win32-ia32';
 const winArg = process.argv[2];
-const winExt = winArg === 'win32' ? win32: win64;
+const winExt = winArg === 'win32' ? win32 : win64;
 
 deleteOutputFolder()
   .then(getInstallerConfig)
@@ -26,7 +26,7 @@ function getInstallerConfig() {
 
   return Promise.resolve({
     appDirectory: path.join(outPath, 'flasher.js-' + winExt),
-    iconUrl: 'https://raw.githubusercontent.com/thingssdk/flasher.js/resources/icon.ico', 
+    iconUrl: 'https://raw.githubusercontent.com/thingssdk/flasher.js/resources/icon.ico',
     loadingGif: path.join(rootPath, 'resources', 'loading.gif'),
     noMsi: true,
     outputDirectory: path.join(outPath, 'installers'),
