@@ -4,6 +4,7 @@
 
 ```bash
 npm install
+npm run start-ui
 npm start
 ```
 
@@ -17,6 +18,7 @@ You'll need installed:
 ```
 npm install
 npm run pre-rebuild && npm run rebuild
+npm run start-ui
 npm start
 ```
 
@@ -25,5 +27,6 @@ npm start
 ```
 npm install
 npm run pre-rebuild && npm run rebuild
-sudo npm start
+npm run start-ui
+npm start
 ```

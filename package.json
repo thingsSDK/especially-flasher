@@ -11,7 +11,7 @@
 
     "build-ui": "cd ui && npm run build && cd .. && npm run copy-ui && npm run fix-index",
     "copy-ui": "ncp ui/build front-end/",
-    "fix-index": "",
+    "fix-index": "node ./scripts/fix-index.js",
 
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
     "rebuild": "cd node_modules/serialport && node-gyp rebuild --target=1.4.8 --arch=x64 --dist-url=https://atom.io/download/atom-shell",

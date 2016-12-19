@@ -44,6 +44,7 @@ class App extends Component {
       manifests: [],
       readyToFlash: false,
       isFlashing: false,
+      firstRun: true,
       percent: 100,
       status: 'Finding ports and manifests...'
     };
@@ -64,8 +65,14 @@ class App extends Component {
   }
 
   currentClass() {
-    return this.state.isFlashing ? 'flashing' : 'finished';
+    if (this.state.firstRun) {
+      return '';
+    } else {
+      return this.state.isFlashing ? 'flashing' : 'finished';
+    }
   }
+
+
 
   prepareEventHandlers() {
     ipcRenderer.on('portsFound', (event, ports) => this.portsFound(ports));
@@ -91,7 +98,7 @@ class App extends Component {
 
     ipcRenderer.on('flashProgress', (event, progress) => {
       const {percent, message} = progress;
-      let humanReadablePercent =  Math.round(percent * 100);
+      let humanReadablePercent = Math.round(percent * 100);
 
       this.setState({
         percent: humanReadablePercent,
@@ -195,7 +202,7 @@ class App extends Component {
   }
 
   flash() {
-    this.setState({ isFlashing: true });
+    this.setState({ isFlashing: true, firstRun: false });
     ipcRenderer.send('flash', this.state.selectedPort, this.state.selectedManifest);
   }
 
