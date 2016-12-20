@@ -45,6 +45,7 @@ class App extends Component {
       readyToFlash: false,
       isFlashing: false,
       firstRun: true,
+      isScanningForPorts: false,
       percent: 100,
       status: 'Finding ports and manifests...'
     };
@@ -71,8 +72,6 @@ class App extends Component {
       return this.state.isFlashing ? 'flashing' : 'finished';
     }
   }
-
-
 
   prepareEventHandlers() {
     ipcRenderer.on('portsFound', (event, ports) => this.portsFound(ports));
@@ -108,10 +107,18 @@ class App extends Component {
   }
 
   componentWillMount() {
+    this.scanForPortsInterval = setInterval(() => {
+      if (!this.state.isFlashing && !this.state.isScanningForPorts) {
+        this.setState({isScanningForPorts: true});
+        this.scanForPorts();
+      }
+    }, CONSTANTS.pollTime);
     this.prepareEventHandlers();
-
-    this.scanForPorts();
     this.fetchManifests();
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.scanForPortsInterval);
   }
 
   scanForPorts() {
@@ -125,14 +132,13 @@ class App extends Component {
     const isFirstSerialPortAdded = this.state.ports.length === 0 && portValues.length > 0;
     const isLastSerialPort = portValues.length === 1;
 
-    const newState = { ports: portValues };
+    const newState = { ports: portValues, isScanningForPorts: false };
 
     if (isFirstSerialPortAdded || isLastSerialPort) {
       Object.assign(newState, { selectedPort: portValues[0].value });
     }
 
     this.setState(newState);
-    if (!this.state.isFlashing) this.scanForPorts()
     this.prepareUI();
   }
 

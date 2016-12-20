@@ -3,7 +3,6 @@ const scanForPorts = require('./scanForPorts');
 const flash = require('./flash');
 const {ipcMain} = require('electron');
 
-
 function onPortScanComplete(err, ports, event) {
     if (err) {
         event.sender.send('portError', { message: err.message });

@@ -4,6 +4,7 @@ const nodeFetch = require('node-fetch');
 const RomComm = require('rom-comm');
 
 function handleBinaryPreparer(binaryPreparer, port, onError, onProgress, onComplete) {
+    const flashSpeedMultiplier = process.platform === 'win32' ? 2 : 4;
     binaryPreparer
         .on("error", onError)
         .on("progress", progress => {
@@ -11,7 +12,7 @@ function handleBinaryPreparer(binaryPreparer, port, onError, onProgress, onCompl
             onProgress(progress.details.downloadedBytes / progress.details.downloadSize, progress.display);
         })
         .on("complete", flashSpec => {
-            const device = RomComm.serial(port, { baudRate: 115200 }, {
+            const device = RomComm.serial(port, { baudRate: 115200 * flashSpeedMultiplier }, {
                 onProgress: progress => onProgress(progress.flashedBytes / progress.totalBytes, 'Flashing')
             });
             device.open(err => {
