@@ -1,0 +1,26 @@
+{
+  "name": "Espruino",
+  "version": "1v96",
+  "board": "ESP8266 4MB",
+  "revision": "ESP-12",
+  "description": "Official Binaries for the Espruino Runtime for the ESP8266 MCU ESP-12",
+  "download": "http://www.espruino.com/files/espruino_1v96.zip",
+  "flash": [
+    {
+      "address": "0x0000",
+      "path": "espruino_1v96_esp8266_4mb/boot_v1.6.bin"
+    },
+    {
+      "address": "0x1000",
+      "path": "espruino_1v96_esp8266_4mb/espruino_esp8266_user1.bin"
+    },
+    {
+      "address": "0x3FC000",
+      "path": "espruino_1v96_esp8266_4mb/esp_init_data_default.bin"
+    },
+    {
+      "address": "0x37E000",
+      "path": "espruino_1v96_esp8266_4mb/blank.bin"
+    }
+  ]
+}
