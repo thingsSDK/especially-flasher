@@ -20,6 +20,8 @@ EP-12 devices like the Adafruit Huzzah and Adadfruit Feather Huzzah.
 
 The latest realeases can be found [here](https://github.com/thingsSDK/flasher.js/releases) for Windows, Linux and Mac OS X.
 
+_Install the required [CP2104 USB driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers) to have the COM/Serial port appear properly._
+
 -----
 
 ## Application Compatibility 
