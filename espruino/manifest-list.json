@@ -1,0 +1,101 @@
+{
+  "options": [
+    {
+      "name": "Espruino",
+      "versions": [
+        {
+          "version": "1v96",
+          "board": "ESP8266 4MB",
+          "revision": "ESP12",
+          "manifest": "http://localhost:9898/manifest/version/1.96",
+          "latest": true
+        },
+        {
+          "version": "1v91",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.91.json",
+          "latest": false
+        },
+        {
+          "version": "1v90",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.90.json",
+          "latest": false
+        },
+        {
+          "version": "1v89",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.89.json",
+          "latest": false
+        },
+        {
+          "version": "1v88",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.88.json",
+          "latest": false
+        },
+        {
+          "version": "1v87",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.87.json",
+          "latest": false
+        },
+        {
+          "version": "1v86",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.86.json",
+          "latest": false
+        },
+        {
+          "version": "1v85",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/espruino/manifest.1.85.json",
+          "latest": false
+        }
+      ]
+    },
+    {
+      "name": "Smart.js",
+      "versions": [
+        {
+          "version": "Beta 3 \"Fat Rabbit\", 2016-03-24",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1/esp8266/esp12/smartjs/manifest.json",
+          "latest": true
+        }
+      ]
+    },
+    {
+      "name": "thingsSwitch",
+      "versions": [
+        {
+          "version": "0.0.2",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1.1/esp8266/esp12/thingsSwitch/manifest.0.0.2.json",
+          "latest": true
+        }
+      ]
+    },
+    {
+      "name": "MicroPython",
+      "versions": [
+        {
+          "version": "1.8.6",
+          "board": "ESP8266",
+          "revision": "ESP12",
+          "manifest": "http://flasher.thingssdk.com/v1.1/esp8266/esp12/micropython/manifest.json",
+          "latest": true
+        }
+      ]
+    }
+  ]
+}

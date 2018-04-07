@@ -13,7 +13,8 @@ import Footer from './Footer';
  * @type {{manifestList: string, pollTime: number}}
  */
 const CONSTANTS = {
-  manifestList: "http://flasher.thingssdk.com/v1.1/manifest-list.json",
+  // manifestList: "http://flasher.thingssdk.com/v1.1/manifest-list.json",
+  manifestList: "http://localhost:9898/manifest/list",
   pollTime: 1000
 };
 

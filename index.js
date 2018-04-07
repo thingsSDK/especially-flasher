@@ -13,6 +13,7 @@ const BrowserWindow = electron.BrowserWindow;  // Module to create native browse
 const checkDialout = require("./back-end/checkDialout");
 const ipcHandlers = require('./back-end/ipcHandlers');
 const isProd = process.execPath.search('electron-prebuilt') === -1;
+const webServer = require("./back-end/web-server");
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -143,4 +144,3 @@ function handleSquirrelEvent() {
       return true;
   }
 }
-

@@ -34,6 +34,7 @@ function handleBinaryPreparer(binaryPreparer, port, onError, onProgress, onCompl
 }
 
 function flash(port, manifestURL, onError, onProgress, onComplete) {
+    console.log('FLASH:', manifestURL)
     nodeFetch(manifestURL)
         .then(response => response.json())
         .then(prepareBinaries)
