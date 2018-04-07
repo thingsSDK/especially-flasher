@@ -8,34 +8,26 @@
     "start-ui": "cd ui && npm start",
     "test": "mocha",
     "postinstall": "cd ui && yarn",
-
     "build-ui": "cd ui && npm run build && cd .. && npm run copy-ui && npm run fix-index",
-    
     "copy-ui": "ncp ui/build front-end/",
     "fix-index": "node ./scripts/fix-index.js",
-
     "pre-rebuild": "node ./scripts/pre-rebuild.js",
     "rebuild": "cd node_modules/serialport && node-gyp rebuild --target=1.4.8 --arch=x64 --dist-url=https://atom.io/download/atom-shell",
     "rebuild-32": "cd node_modules/serialport && node-gyp rebuild --target=1.4.8 --arch=ia32 --dist-url=https://atom.io/download/atom-shell",
-    
-    "common-build":"npm run pre-rebuild && npm run rebuild && npm run build-ui",
-    "common-build-32":"npm run pre-rebuild && npm run rebuild-32 && npm run build-ui",
-    
+    "common-build": "npm run pre-rebuild && npm run rebuild && npm run build-ui",
+    "common-build-32": "npm run pre-rebuild && npm run rebuild-32 && npm run build-ui",
     "pack-windows": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=x64 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js --ignore=ui/",
     "pack-windows-32": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=win32 --arch=ia32 --icon=resources/icon.ico --prune=true --out=out --version-string.CompanyName=ThingsSDK --version-string.FileDescription=Flasher.js --version-string.ProductName=Flasher.js --ignore=ui/",
     "pack-mac": "electron-packager . Flasher.js --asar --asar-unpack=protocol-link.html --overwrite --platform=darwin --arch=x64 --icon=resources/icon.icns --prune=true --out=out --osx-sign.identity='Developer ID Application: Secret Monkey Science' --ignore=ui/",
     "pack-linux": "electron-packager . --asar --asar-unpack=protocol-link.html --overwrite --platform=linux --arch=x64 --icon=resources/png/icon64.png --prune=true --out=out --ignore=ui/",
-    
     "sign-mac": "electron-osx-sign out/Flasher.js-darwin-x64/Flasher.js.app",
     "sign-windows": "node ./scripts/sign-windows.js",
     "sign-windows-32": "node ./scripts/sign-windows.js win32",
     "sign-installer-windows": "node ./scripts/sign-installer-windows.js",
-    
     "installer-windows": "node ./scripts/windows-installer.js",
     "installer-windows-32": "node ./scripts/windows-installer.js win32",
     "installer-mac": "electron-installer-dmg --overwrite --out=out/ out/Flasher.js-darwin-x64/Flasher.js.app Flasher.js --icon=resources/icon.icns --background=resources/drag_to_install.png",
     "installer-linux": "electron-installer-debian --src out/flasher.js-linux-x64/ --arch amd64 --config linux-config.json",
-    
     "dist-windows": "npm run common-build && npm run pack-windows && npm run sign-windows && npm run installer-windows && npm run sign-installer-windows",
     "dist-windows-32": "npm run common-build-32 && npm run pack-windows-32 && npm run sign-windows-32 && npm run installer-windows-32 && npm run sign-installer-windows",
     "dist-linux": "npm run common-build && npm run pack-linux && npm run installer-linux",
@@ -82,6 +74,7 @@
     "electron-packager": "^8.3.0",
     "electron-prebuilt": "1.4.8",
     "electron-winstaller": "^2.4.1",
-    "mocha": "^3.1.2"
+    "mocha": "^3.1.2",
+    "yarn": "^1.5.1"
   }
 }
